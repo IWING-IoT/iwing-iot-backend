@@ -24,6 +24,8 @@ exports.signin = catchAsync(async (req, res, next) => {
   if (!user || !user.correctPassword(password, user.password))
     return next(new AppError("Incorrect email or password", 401));
 
+  const role = await Role.findById(user.roleId);
+
   const token = signToken({ userId: user._id });
   res.status(200).json({
     status: "success",
@@ -31,6 +33,7 @@ exports.signin = catchAsync(async (req, res, next) => {
     data: {
       name: user.name,
       email: user.email,
+      role: role.name,
     },
   });
 });
