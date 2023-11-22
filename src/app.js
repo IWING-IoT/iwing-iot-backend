@@ -13,6 +13,7 @@ const projectRouter = require("./routes/projectRoutes");
 const templateRouter = require("./routes/templateRoutes");
 const permissionRouter = require("./routes/permissionRoutes");
 const collaboratorRouter = require("./routes/collaboratorRoutes");
+const phaseRouter = require("./routes/phaseRoutes");
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/project", projectRouter);
 app.use("/api/template", templateRouter);
 app.use("/api/permission", permissionRouter);
 app.use("/api/collaborator", collaboratorRouter);
+app.use("/api/phase", phaseRouter);
 
 app.use(globalErrorHandler);
 

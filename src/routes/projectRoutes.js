@@ -3,6 +3,7 @@ const express = require("express");
 const projectController = require("./../controllers/projectController");
 const authController = require("./../controllers/authController");
 const collaboratorController = require("./../controllers/collaboratorController");
+const phaseController = require("./../controllers/phaseController");
 
 const router = express.Router();
 
@@ -33,6 +34,18 @@ router.get(
   "/:projectId/collaborator",
   authController.protect,
   collaboratorController.getCollaborator
+);
+
+router.post(
+  "/:projectId/phase",
+  authController.protect,
+  phaseController.createPhase
+);
+
+router.get(
+  "/:projectId/phase",
+  authController.protect,
+  phaseController.getPhases
 );
 
 module.exports = router;
