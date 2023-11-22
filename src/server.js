@@ -7,7 +7,7 @@ dotenv.config();
 
 mongoose
   .connect(
-    process.env.​CONNECTION_STRING
+    process.env.CONNECTION_STRING
   )
   .then(() => {
     console.log("DB connection successful");
