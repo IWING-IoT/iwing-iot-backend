@@ -7,7 +7,7 @@ dotenv.config();
 
 mongoose
   .connect(
-    "mongodb+srv://peeranat45:0625901000@cluster0.9cl8sx1.mongodb.net/?retryWrites=true&w=majority"
+    process.env.​CONNECTION_STRING
   )
   .then(() => {
     console.log("DB connection successful");
