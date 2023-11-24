@@ -27,7 +27,7 @@ exports.signin = catchAsync(async (req, res, next) => {
   const role = await Role.findById(user.roleId);
 
   const token = signToken({
-    userId: user._id,
+    id: user._id,
     name: user.name,
     email: user.email,
     role: role.name,
@@ -57,7 +57,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
   // Check if this user is exist
-  const user = await User.findById(decoded.userId);
+  const user = await User.findById(decoded.id);
   if (!user)
     return next(
       new AppError("The user belonging to the token no longer exists.")
