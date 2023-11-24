@@ -26,15 +26,15 @@ exports.signin = catchAsync(async (req, res, next) => {
 
   const role = await Role.findById(user.roleId);
 
-  const token = signToken({ userId: user._id });
+  const token = signToken({
+    userId: user._id,
+    name: user.name,
+    email: user.email,
+    role: role.name,
+  });
   res.status(200).json({
     status: "success",
     token,
-    data: {
-      name: user.name,
-      email: user.email,
-      role: role.name,
-    },
   });
 });
 
