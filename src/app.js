@@ -14,6 +14,8 @@ const templateRouter = require("./routes/templateRoutes");
 const permissionRouter = require("./routes/permissionRoutes");
 const collaboratorRouter = require("./routes/collaboratorRoutes");
 const phaseRouter = require("./routes/phaseRoutes");
+const categoryRouter = require("./routes/categoyRoutes");
+const entryRouter = require("./routes/entryRoutes");
 
 const app = express();
 
@@ -30,6 +32,8 @@ app.use("/api/template", templateRouter);
 app.use("/api/permission", permissionRouter);
 app.use("/api/collaborator", collaboratorRouter);
 app.use("/api/phase", phaseRouter);
+app.use("/api/category", categoryRouter);
+app.use("/api/entry", entryRouter);
 
 app.use(globalErrorHandler);
 

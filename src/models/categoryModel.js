@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-categorySchema = new mongoose.Schema({
+const categorySchema = new mongoose.Schema({
   projectId: {
     type: mongoose.Schema.ObjectId,
     ref: "Project",
@@ -11,10 +11,9 @@ categorySchema = new mongoose.Schema({
     required: [true, "Category must has a names"],
     maxlength: 50,
   },
-  mainAttributeName: {
-    type: String,
-    required: [true, "Category must has a main attribute name"],
-    maxlength: 50,
+  mainAttribute: {
+    type: mongoose.Schema.ObjectId,
+    ref: "Attribute",
   },
   createdAt: Date,
   createdBy: {
@@ -22,6 +21,10 @@ categorySchema = new mongoose.Schema({
     ref: "User",
   },
   editedAt: Date,
+  editedBy: {
+    type: mongoose.Schema.ObjectId,
+    ref: "User",
+  },
   isDeleted: {
     type: Boolean,
     default: false,
@@ -29,6 +32,6 @@ categorySchema = new mongoose.Schema({
   deletedAt: Date,
 });
 
-const Category = mongoose.model("Category", categorySchemas);
+const Category = mongoose.model("Category", categorySchema);
 
 module.exports = Category;

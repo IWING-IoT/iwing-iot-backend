@@ -26,6 +26,7 @@ attributeSchema = new mongoose.Schema({
   parentCategoryId: {
     type: mongoose.Schema.ObjectId,
     ref: "Category",
+    default: null,
   },
   positionInCategory: {
     type: Number,
@@ -38,7 +39,7 @@ attributeSchema = new mongoose.Schema({
     required: [true, "Attribute must has a creator ID"],
   },
   editedAt: Date,
-  createdBy: {
+  editedBy: {
     type: mongoose.Schema.ObjectId,
     ref: "User",
   },
