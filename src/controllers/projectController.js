@@ -123,7 +123,7 @@ exports.createProject = catchAsync(async (req, res, next) => {
   // Create new project
   const newProject = await Project.create({
     owner: req.user._id,
-    startedAt: Date.now(),
+    startedAt: new Date(req.body.startedAt) || Date.now(),
     createdAt: Date.now(),
     editedAt: Date.now(),
     editedBy: req.user._id,
