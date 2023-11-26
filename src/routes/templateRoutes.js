@@ -11,5 +11,6 @@ router.patch(
   authController.protect,
   templateController.editTemplate
 );
+router.get("/", authController.protect, templateController.getTemplate)
 
 module.exports = router;
