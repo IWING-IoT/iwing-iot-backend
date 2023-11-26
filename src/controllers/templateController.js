@@ -48,7 +48,7 @@ exports.getTemplate = catchAsync(async (req, res, next) => {
         _id: 0,
         name: "$name",
         description: "$description",
-        attributes: "$attributes",
+        // attributes: "$attributes",
       },
     },
   ]);
