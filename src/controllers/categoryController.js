@@ -72,6 +72,7 @@ exports.createCategory = catchAsync(async (req, res, next) => {
     projectId,
     req.user._id,
     "You do not have permission to create a new category.",
+    "owner",
     "can_edited"
   );
 

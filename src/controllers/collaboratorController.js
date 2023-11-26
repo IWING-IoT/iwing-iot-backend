@@ -22,67 +22,163 @@ const compareId = (id1, id2) => {
   return id1.toString() === id2.toString();
 };
 
+const checkCollab = async (next, projectId, userId, message, ...permission) => {
+  // Check permission wheather use has permission to create new phase
+  const projectCollab = await Collaborator.findOne({
+    projectId,
+    userId,
+  });
+
+  if (!projectCollab)
+    return next(
+      new AppError("You do not have permission to access this project.", 401)
+    );
+  const permissionIds = await Permission.find({ name: { $in: permission } });
+
+  for (let i = 1; i < permissionIds; ++i) {
+    if (compareId(permissionIds[0]._id, projectCollab.permissionId)) break;
+    if (i === permissionIds.length) return next(new AppError(message, 401));
+  }
+};
+
+// exports.createCollaborator = catchAsync(async (req, res, next) => {
+//   const collaborator = req.body;
+//   const projectId = req.params.projectId;
+
+//   // Check if request has all required input
+//   if (!collaborator.email || !collaborator.permission)
+//     return next(
+//       new AppError(
+//         "Please input all required input for creating new project.",
+//         401
+//       )
+//     );
+
+//   if (!isValidObjectId(projectId))
+//     return next(
+//       new AppError("Please enter valid mongoDB ID for projectID", 401)
+//     );
+
+//   const permission = await Permission.findOne({ _id: collaborator.permission });
+//   if (!permission)
+//     return next(new AppError("Permission needed not exist", 401));
+
+//   const collaboratorAccount = await User.findOne({
+//     email: collaborator.email,
+//   });
+//   if (!collaboratorAccount) return next(new AppError("User not found", 401));
+
+//   const testCollaborator = await Collaborator.findOne({
+//     userId: collaboratorAccount._id,
+//     projectId,
+//   });
+//   if (testCollaborator)
+//     return next(new AppError("Collaborator already exist", 401));
+
+//   // Check creator permission to add collaborator
+//   const creatorCollaborator = await Collaborator.findOne({
+//     projectId: projectId,
+//     userId: req.user._id,
+//   });
+//   if (!creatorCollaborator) return next(new AppError("Project not exist", 401));
+//   // Get permission owner and can_edit
+//   const can_edit = await Permission.findOne({ name: "can_edited" });
+//   const owner = await Permission.findOne({ name: "owner" });
+//   if (
+//     !compareId(creatorCollaborator.permissionId, can_edit._id) &&
+//     !compareId(creatorCollaborator.permissionId, owner._id)
+//   )
+//     return next(
+//       new AppError("You do not have permission to add new collaborator", 401)
+//     );
+
+//   const newCollaborator = await Collaborator.create({
+//     userId: collaboratorAccount._id,
+//     permissionId: collaborator.permission,
+//     projectId,
+//     createdAt: Date.now(),
+//     createdBy: req.user._id,
+//     editedAt: Date.now(),
+//     editedBy: req.user._id,
+//   });
+//   res.status(201).json();
+// });
+
 exports.createCollaborator = catchAsync(async (req, res, next) => {
-  const collaborator = req.body;
   const projectId = req.params.projectId;
+  const invalidCollaborator = [];
 
-  // Check if request has all required input
-  if (!collaborator.email || !collaborator.permission)
-    return next(
-      new AppError(
-        "Please input all required input for creating new project.",
-        401
-      )
-    );
-
-  if (!isValidObjectId(projectId))
-    return next(
-      new AppError("Please enter valid mongoDB ID for projectID", 401)
-    );
-
-  const permission = await Permission.findOne({ _id: collaborator.permission });
-  if (!permission)
-    return next(new AppError("Permission needed not exist", 401));
-
-  const collaboratorAccount = await User.findOne({
-    email: collaborator.email,
-  });
-  if (!collaboratorAccount) return next(new AppError("User not found", 401));
-
-  const testCollaborator = await Collaborator.findOne({
-    userId: collaboratorAccount._id,
+  checkCollab(
+    next,
     projectId,
-  });
-  if (testCollaborator)
-    return next(new AppError("Collaborator already exist", 401));
+    req.user._id,
+    "You do not have permission to create a new category.",
+    "can_edited",
+    "owner"
+  );
 
-  // Check creator permission to add collaborator
-  const creatorCollaborator = await Collaborator.findOne({
-    projectId: projectId,
-    userId: req.user._id,
-  });
-  if (!creatorCollaborator) return next(new AppError("Projecr not exist", 401));
-  // Get permission owner and can_edit
-  const can_edit = await Permission.findOne({ name: "can_edited" });
-  const owner = await Permission.findOne({ name: "owner" });
-  if (
-    !compareId(creatorCollaborator.permissionId, can_edit._id) &&
-    !compareId(creatorCollaborator.permissionId, owner._id)
-  )
-    return next(
-      new AppError("You do not have permission to add new collaborator", 401)
-    );
+  for (const collaborator of req.body) {
+    // Check if request has all required input
+    if (
+      !collaborator.email ||
+      !collaborator.permission ||
+      !isValidObjectId(projectId)
+    ) {
+      invalidCollaborator.push({
+        email: collaborator.email,
+        reason: "Invalid input",
+      });
+      continue;
+    }
 
-  const newCollaborator = await Collaborator.create({
-    userId: collaboratorAccount._id,
-    permissionId: collaborator.permission,
-    projectId,
-    createdAt: Date.now(),
-    createdBy: req.user._id,
-    editedAt: Date.now(),
-    editedBy: req.user._id,
+    const permission = await Permission.findOne({
+      _id: collaborator.permission,
+    });
+    if (!permission) {
+      invalidCollaborator.push({
+        email: collaborator.email,
+        reason: "Permission needed not exist",
+      });
+      continue;
+    }
+
+    const collaboratorAccount = await User.findOne({
+      email: collaborator.email,
+    });
+    if (!collaboratorAccount) {
+      invalidCollaborator.push({
+        email: collaborator.email,
+        reason: "User not found",
+      });
+      continue;
+    }
+
+    const testCollaborator = await Collaborator.findOne({
+      userId: collaboratorAccount._id,
+      projectId,
+    });
+    if (testCollaborator) {
+      invalidCollaborator.push({
+        email: collaborator.email,
+        reason: "Collaborator already exist",
+      });
+      continue;
+    }
+
+    const newCollaborator = await Collaborator.create({
+      userId: collaboratorAccount._id,
+      permissionId: collaborator.permission,
+      projectId,
+      createdAt: Date.now(),
+      createdBy: req.user._id,
+      editedAt: Date.now(),
+      editedBy: req.user._id,
+    });
+  }
+  // Check wheather collaborator is valid
+  res.status(201).json({
+    invalidCollaborator,
   });
-  res.status(201).json();
 });
 
 exports.editCollaborator = catchAsync(async (req, res, next) => {
