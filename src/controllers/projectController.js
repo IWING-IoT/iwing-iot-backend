@@ -209,12 +209,23 @@ exports.getInfo = catchAsync(async (req, res, next) => {
       $unwind: "$owner",
     },
     {
+      $lookup: {
+        from: "locations",
+        localField: "project.location",
+        foreignField: "_id",
+        as: "location",
+      },
+    },
+    {
+      $unwind: "$location",
+    },
+    {
       $project: {
         _id: 0,
         name: "$project.name",
         description: "$project.description",
         ownerName: "$owner.name",
-        location: "$project.location",
+        location: "$location.th_name",
         startedAt: "$project.startedAt",
         endedAt: "$project.endedAt",
         isArchived: "$project.isArchived",
