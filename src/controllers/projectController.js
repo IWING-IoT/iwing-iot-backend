@@ -5,6 +5,8 @@ const Project = require("./../models/projectModel");
 const Template = require("./../models/templateModel");
 const Permission = require("./../models/permissionModel");
 const Collaborator = require("./../models/collaboratorModel");
+const Location = require("./../models/locationModel");
+
 const AppError = require("../utils/appError");
 
 /**
@@ -83,12 +85,23 @@ exports.getProjects = catchAsync(async (req, res, next) => {
       $unwind: "$owner",
     },
     {
+      $lookup: {
+        from: "locations",
+        localField: "project.location",
+        foreignField: "_id",
+        as: "location",
+      },
+    },
+    {
+      $unwind: "$location",
+    },
+    {
       $project: {
         _id: 0,
         id: "$project._id",
         name: "$project.name",
         owner: "$owner.name",
-        location: "$project.location",
+        location: "$location.th_name",
         startedAt: "$project.startedAt",
         createdAt: "$project.createdAt",
       },
@@ -112,13 +125,25 @@ exports.getProjects = catchAsync(async (req, res, next) => {
 exports.createProject = catchAsync(async (req, res, next) => {
   const project = req.body;
   // Check all input requirement
-  if (!project.name || !project.template || !project.location)
+  if (
+    !project.name ||
+    !project.template ||
+    !project.location ||
+    !isValidObjectId(project.template) ||
+    !isValidObjectId(project.location)
+  )
     return next(
       new AppError(
         "Please input all required input for creating new project.",
         401
       )
     );
+
+  const testTemplate = await Template.findById(project.template);
+  if (!testTemplate) return next(new AppError("Template not exist", 401));
+
+  const testLocation = await Location.findById(project.location);
+  if (!testLocation) return next(new AppError("Locatio not found", 401));
 
   // Create new project
   const newProject = await Project.create({
@@ -303,5 +328,3 @@ exports.edited = catchAsync(async (req, res, next) => {
   );
   res.status(204).json();
 });
-
-
