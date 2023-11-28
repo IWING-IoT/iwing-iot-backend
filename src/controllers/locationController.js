@@ -13,5 +13,8 @@ exports.createLocation = catchAsync(async (req, res, next) => {
 
 exports.getLocation = catchAsync(async (req, res, next) => {
   const location = await Location.find();
-  res.status(200).json(location);
+  res.status(200).json({
+    status: "success",
+    data: location,
+  });
 });
