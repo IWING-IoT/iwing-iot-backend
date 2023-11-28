@@ -16,6 +16,7 @@ const collaboratorRouter = require("./routes/collaboratorRoutes");
 const phaseRouter = require("./routes/phaseRoutes");
 const categoryRouter = require("./routes/categoyRoutes");
 const entryRouter = require("./routes/entryRoutes");
+const locationRouter = require("./routes/locationRoutes");
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/api/collaborator", collaboratorRouter);
 app.use("/api/phase", phaseRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api/entry", entryRouter);
+app.use("/api/location", locationRouter);
 
 app.use(globalErrorHandler);
 
