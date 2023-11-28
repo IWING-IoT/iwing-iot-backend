@@ -12,7 +12,16 @@ exports.createLocation = catchAsync(async (req, res, next) => {
 });
 
 exports.getLocation = catchAsync(async (req, res, next) => {
-  const location = await Location.find();
+  const location = await Location.aggregate([
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        th_name: "$th_name",
+        en_name: "$en_name",
+      },
+    },
+  ]);
   res.status(200).json({
     status: "success",
     data: location,
