@@ -23,7 +23,7 @@ const app = express();
 app.use(bodyParser.json());
 
 app.use(morgan("dev"));
-// app.use(cors());
+app.use(cors());
 
 app.use("/api/admin", adminRouter);
 app.use("/api/user", userRouter);
