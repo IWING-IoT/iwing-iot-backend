@@ -225,7 +225,11 @@ exports.getInfo = catchAsync(async (req, res, next) => {
         name: "$project.name",
         description: "$project.description",
         ownerName: "$owner.name",
-        location: "$location.th_name",
+        location: {
+          th_name: "$location.th_name",
+          en_name: "$location.en_name",
+        },
+
         startedAt: "$project.startedAt",
         endedAt: "$project.endedAt",
         isArchived: "$project.isArchived",
