@@ -20,7 +20,7 @@ const errorDev = (err, res) => {
   } else {
     res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
+      message: err.message,
     });
   }
 };
