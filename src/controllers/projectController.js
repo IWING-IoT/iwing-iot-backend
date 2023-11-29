@@ -101,7 +101,10 @@ exports.getProjects = catchAsync(async (req, res, next) => {
         id: "$project._id",
         name: "$project.name",
         owner: "$owner.name",
-        location: "$location.th_name",
+        location: {
+          th_name: "$location.th_name",
+          en_name: "$location.en_name",
+        },
         startedAt: "$project.startedAt",
         createdAt: "$project.createdAt",
       },
