@@ -6,6 +6,7 @@ const Template = require("./../models/templateModel");
 const Permission = require("./../models/permissionModel");
 const Collaborator = require("./../models/collaboratorModel");
 const Location = require("./../models/locationModel");
+const Phase = require("./../models/phaseModel");
 
 const AppError = require("../utils/appError");
 
@@ -174,6 +175,7 @@ exports.createProject = catchAsync(async (req, res, next) => {
 });
 
 exports.getInfo = catchAsync(async (req, res, next) => {
+  const projectId = req.params.projectId;
   // Check ว่า userid มีสิทธิได้ getinfo รึป่าว
   if (!isValidObjectId(req.params.projectId))
     return next(new AppError("Invalid projectId"));
@@ -244,9 +246,14 @@ exports.getInfo = catchAsync(async (req, res, next) => {
       new AppError("You do not have permission to access this project", 401)
     );
 
+  const activePhaseId = await Phase.findOne({ projectId, isActive: true });
+
   res.status(200).json({
     status: "success",
-    data: collaboratorProject[0],
+    data: {
+      activePhaseId,
+      ...collaboratorProject[0],
+    },
   });
 });
 
