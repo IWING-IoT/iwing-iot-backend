@@ -17,6 +17,7 @@ const phaseRouter = require("./routes/phaseRoutes");
 const categoryRouter = require("./routes/categoyRoutes");
 const entryRouter = require("./routes/entryRoutes");
 const locationRouter = require("./routes/locationRoutes");
+const phaseApiRouter = require("./routes/phaseApiRoutes");
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/api/phase", phaseRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api/entry", entryRouter);
 app.use("/api/location", locationRouter);
+app.use("/api/phaseApi", phaseApiRouter);
 
 app.use(globalErrorHandler);
 
