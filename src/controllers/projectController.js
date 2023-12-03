@@ -187,7 +187,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;
   // Check ว่า userid มีสิทธิได้ getinfo รึป่าว
   if (!isValidObjectId(req.params.projectId))
-    return next(new AppError("Invalid projectId"));
+    return next(new AppError("Invalid projectId", 404));
   const collaboratorProject = await Collaborator.aggregate([
     {
       $match: {
