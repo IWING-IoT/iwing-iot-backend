@@ -120,6 +120,15 @@ exports.getProjects = catchAsync(async (req, res, next) => {
     },
   ]);
 
+  // console.log(collaboratorProject);
+  let i = 0;
+  for (const project of collaboratorProject) {
+    const phase = await Phase.find({ projectId: project.id, isActive: true });
+
+    collaboratorProject[i].activePhaseId =
+      phase.length !== 0 ? phase[0]._id : null;
+    i++;
+  }
   res.status(200).json({
     status: "success",
     data: collaboratorProject,
