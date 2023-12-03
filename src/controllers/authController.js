@@ -60,7 +60,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   const user = await User.findById(decoded.id);
   if (!user)
     return next(
-      new AppError("The user belonging to the token no longer exists.")
+      new AppError("The user belonging to the token no longer exists.", 400)
     );
 
   req.user = user;
@@ -74,7 +74,7 @@ exports.restrictTo = (...roles) => {
 
     if (!roles.includes(userRole.name)) {
       return next(
-        new AppError("You do not have permission to perform this action"),
+        new AppError("You do not have permission to perform this action", 403),
         403
       );
     }

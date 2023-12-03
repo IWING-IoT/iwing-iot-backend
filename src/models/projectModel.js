@@ -24,6 +24,7 @@ const projectSchema = new mongoose.Schema({
     type: Date,
     required: [true, "A project must has a started date"],
   },
+  description: String,
   endedAt: Date,
   createdAt: Date,
   isArchived: {

@@ -153,10 +153,10 @@ exports.createProject = catchAsync(async (req, res, next) => {
     );
 
   const testTemplate = await Template.findById(project.template);
-  if (!testTemplate) return next(new AppError("Template not exist", 401));
+  if (!testTemplate) return next(new AppError("Template not found", 404));
 
   const testLocation = await Location.findById(project.location);
-  if (!testLocation) return next(new AppError("Locatio not found", 401));
+  if (!testLocation) return next(new AppError("Location not found", 404));
 
   // Create new project
   const newProject = await Project.create({
@@ -252,7 +252,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
   ]);
   if (collaboratorProject.length === 0)
     return next(
-      new AppError("You do not have permission to access this project", 401)
+      new AppError("You do not have permission to access this project", 403)
     );
 
   const activePhaseId = await Phase.findOne({ projectId, isActive: true });
@@ -260,7 +260,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: {
-      activePhaseId,
+      activePhaseId: activePhaseId._id,
       ...collaboratorProject[0],
     },
   });
@@ -268,7 +268,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
 
 exports.archived = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.projectId))
-    return next(new AppError("Invalid projectId"));
+    return next(new AppError("Invalid projectId", 404));
 
   const projectCollab = await Collaborator.findOne({
     projectId: req.params.projectId,
@@ -277,7 +277,7 @@ exports.archived = catchAsync(async (req, res, next) => {
 
   if (!projectCollab)
     return next(
-      new AppError("You do not have permission to access this project", 401)
+      new AppError("You do not have permission to access this project", 403)
     );
 
   const can_edit = await Permission.findOne({ name: "can_edited" });
@@ -287,7 +287,7 @@ exports.archived = catchAsync(async (req, res, next) => {
     !compareId(projectCollab.permissionId, owner._id)
   )
     return next(
-      new AppError("You do not have permission to archive project", 401)
+      new AppError("You do not have permission to archive project", 403)
     );
 
   const updatedProject = await Project.findOneAndUpdate(
@@ -303,7 +303,7 @@ exports.archived = catchAsync(async (req, res, next) => {
 
 exports.deleted = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.projectId))
-    return next(new AppError("Invalid projectId"));
+    return next(new AppError("Invalid projectId", 401));
 
   const projectCollab = await Collaborator.findOne({
     projectId: req.params.projectId,
@@ -312,12 +312,12 @@ exports.deleted = catchAsync(async (req, res, next) => {
 
   if (!projectCollab)
     return next(
-      new AppError("You do not have permission to access this project", 401)
+      new AppError("You do not have permission to access this project", 403)
     );
   const owner = await Permission.findOne({ name: "owner" });
   if (!compareId(projectCollab.permissionId, owner._id))
     return next(
-      new AppError("You do not have permission to delete project", 401)
+      new AppError("You do not have permission to delete project", 403)
     );
 
   const updatedProject = await Project.findOneAndUpdate(
@@ -333,7 +333,7 @@ exports.deleted = catchAsync(async (req, res, next) => {
 
 exports.edited = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.projectId))
-    return next(new AppError("Invalid projectId"));
+    return next(new AppError("Invalid projectId", 404));
 
   const projectCollab = await Collaborator.findOne({
     projectId: req.params.projectId,
@@ -342,7 +342,7 @@ exports.edited = catchAsync(async (req, res, next) => {
 
   if (!projectCollab)
     return next(
-      new AppError("You do not have permission to access this project", 401)
+      new AppError("You do not have permission to access this project", 403)
     );
 
   const can_edit = await Permission.findOne({ name: "can_edited" });
@@ -352,7 +352,7 @@ exports.edited = catchAsync(async (req, res, next) => {
     !compareId(projectCollab.permissionId, owner._id)
   )
     return next(
-      new AppError("You do not have permission to edit project", 401)
+      new AppError("You do not have permission to edit project", 403)
     );
   const updatedProject = await Project.findOneAndUpdate(
     {
