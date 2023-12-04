@@ -186,15 +186,15 @@ exports.getInfo = catchAsync(async (req, res, next) => {
         projectId: new mongoose.Types.ObjectId(req.params.projectId),
       },
     },
-    {
-      $group: {
-        _id: "$projectId",
-      },
-    },
+    // {
+    //   $group: {
+    //     _id: "$projectId",
+    //   },
+    // },
     {
       $lookup: {
         from: "projects",
-        localField: "_id",
+        localField: "projectId",
         foreignField: "_id",
         as: "project",
       },
@@ -225,6 +225,17 @@ exports.getInfo = catchAsync(async (req, res, next) => {
       $unwind: "$location",
     },
     {
+      $lookup: {
+        from: "permissions",
+        localField: "permissionId",
+        foreignField: "_id",
+        as: "permission",
+      },
+    },
+    {
+      $unwind: "$permission",
+    },
+    {
       $project: {
         _id: 0,
         name: "$project.name",
@@ -238,6 +249,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
         startedAt: "$project.startedAt",
         endedAt: "$project.endedAt",
         isArchived: "$project.isArchived",
+        permission: "$permission.name",
       },
     },
   ]);
