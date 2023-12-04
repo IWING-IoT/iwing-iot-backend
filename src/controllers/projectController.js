@@ -354,6 +354,7 @@ exports.edited = catchAsync(async (req, res, next) => {
     return next(
       new AppError("You do not have permission to edit project", 403)
     );
+
   const updatedProject = await Project.findOneAndUpdate(
     {
       _id: req.params.projectId,

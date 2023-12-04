@@ -12,4 +12,11 @@ router.post(
 );
 // router.post("/account", adminController.addUser);
 
+router.get(
+  "/account",
+  authController.protect,
+  authController.restrictTo("admin"),
+  adminController.getUser
+);
+
 module.exports = router;
