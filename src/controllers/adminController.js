@@ -62,8 +62,10 @@ exports.getUser = catchAsync(async (req, res, next) => {
         id: "$_id",
         _id: 0,
         email: "$email",
+        name: "$name",
         role: "$role.name",
         userStatus: "$userStatus",
+
       },
     },
   ]);
