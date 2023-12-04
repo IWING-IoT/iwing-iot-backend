@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const AppError = require("./../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
+const checkCollab = require("./../utils/checkCollab");
 
 const Collaborator = require("./../models/collaboratorModel");
 const Project = require("./../models/projectModel");
@@ -20,25 +21,6 @@ const isValidObjectId = (id) => {
 
 const compareId = (id1, id2) => {
   return id1.toString() === id2.toString();
-};
-
-const checkCollab = async (next, projectId, userId, message, ...permission) => {
-  // Check permission wheather use has permission to create new phase
-  const projectCollab = await Collaborator.findOne({
-    projectId,
-    userId,
-  });
-
-  if (!projectCollab)
-    return next(
-      new AppError("You do not have permission to access this project.", 401)
-    );
-  const permissionIds = await Permission.find({ name: { $in: permission } });
-
-  for (let i = 1; i < permissionIds; ++i) {
-    if (compareId(permissionIds[0]._id, projectCollab.permissionId)) break;
-    if (i === permissionIds.length) return next(new AppError(message, 401));
-  }
 };
 
 // exports.createCollaborator = catchAsync(async (req, res, next) => {
@@ -108,7 +90,7 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;
   const invalidCollaborator = [];
 
-  checkCollab(
+  await checkCollab(
     next,
     projectId,
     req.user._id,
@@ -189,7 +171,7 @@ exports.editCollaborator = catchAsync(async (req, res, next) => {
     return next(
       new AppError(
         "Please input all required input for creating new project.",
-        401
+        400
       )
     );
 
@@ -200,7 +182,7 @@ exports.editCollaborator = catchAsync(async (req, res, next) => {
     return next(
       new AppError(
         "Please enter valid mongoDB ID for collaboratorId or permissionId",
-        401
+        400
       )
     );
 
@@ -208,36 +190,35 @@ exports.editCollaborator = catchAsync(async (req, res, next) => {
     _id: newPermission.permission,
   });
   if (!permission)
-    return next(new AppError("Permission needed not exist", 401));
+    return next(new AppError("Permission needed not exist", 404));
 
   const testCollaborator = await Collaborator.findById({ _id: collaboratorId });
   if (!testCollaborator)
-    return next(new AppError("Collaborator not exist", 401));
+    return next(new AppError("Collaborator not exist", 404));
 
   // Check creator permission to add collaborator
   const editorCollaborator = await Collaborator.findOne({
     projectId: testCollaborator.projectId,
     userId: req.user._id,
   });
-  // Get permission owner and can_edit
-  const can_edit = await Permission.findOne({ name: "can_edited" });
-  const owner = await Permission.findOne({ name: "owner" });
-  if (
-    !compareId(editorCollaborator.permissionId, can_edit._id) &&
-    !compareId(editorCollaborator.permissionId, owner._id)
-  )
-    return next(
-      new AppError("You do not have permission to edit collaborator", 401)
-    );
 
   // Check is permission a owner
   if (newPermission.equals(owner._id))
-    return next(new AppError("Collaborators cannot be owner", 401));
+    return next(new AppError("Collaborators cannot be owner", 400));
 
   // Cannot change owner to other permission
   const project = await Project.findById(testCollaborator.projectId);
   if (compareId(project.owner, testCollaborator.userId))
-    return next(new AppError("Cannot change owner's permission", 401));
+    return next(new AppError("Cannot change owner's permission", 400));
+
+  await checkCollab(
+    next,
+    project._id,
+    req.user._id,
+    "You do not have edit to edit collaborator.",
+    "can_edited",
+    "owner"
+  );
 
   const editedCollaboator = await Collaborator.findOneAndUpdate(
     { _id: collaboratorId },
@@ -263,7 +244,7 @@ exports.deleteCollaborator = catchAsync(async (req, res, next) => {
 
   const testCollaborator = await Collaborator.findById({ _id: collaboratorId });
   if (!testCollaborator)
-    return next(new AppError("Collaborator not exist", 401));
+    return next(new AppError("Collaborator not exist", 404));
 
   // Check creator permission to add collaborator
   const deleteCollaborator = await Collaborator.findOne({
@@ -271,18 +252,17 @@ exports.deleteCollaborator = catchAsync(async (req, res, next) => {
     userId: req.user._id,
   });
   // Get permission owner and can_edit
-  const can_edit = await Permission.findOne({ name: "can_edited" });
-  const owner = await Permission.findOne({ name: "owner" });
-  if (
-    !compareId(deleteCollaborator.permissionId, can_edit._id) &&
-    !compareId(deleteCollaborator.permissionId, owner._id)
-  )
-    return next(
-      new AppError("You do not have permission to delete collaborator", 401)
-    );
+  await checkCollab(
+    next,
+    testCollaborator.projectId,
+    req.user._id,
+    "You do not have edit to delete collaborator.",
+    "can_edited",
+    "owner"
+  );
   // Check is permission a owner
   if (compareId(testCollaborator.permissionId, owner._id))
-    return next(new AppError("Cannot delete owner permission", 401));
+    return next(new AppError("Cannot delete owner permission", 400));
 
   await Collaborator.deleteOne({ _id: collaboratorId });
   res.status(204).json();
@@ -293,11 +273,11 @@ exports.getCollaborator = catchAsync(async (req, res, next) => {
 
   if (!isValidObjectId(projectId))
     return next(
-      new AppError("Please enter valid mongoDB ID for projectID", 401)
+      new AppError("Please enter valid mongoDB ID for projectID", 400)
     );
 
   const project = await Project.findById(projectId);
-  if (!project) return next(new AppError("Project not exist", 401));
+  if (!project) return next(new AppError("Project not exist", 404));
 
   const collaborators = await Collaborator.find({ projectId });
 

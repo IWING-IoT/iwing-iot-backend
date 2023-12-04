@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const catchAsync = require("./../utils/catchAsync");
 const AppError = require("./../utils/appError");
+const checkCollab = require("./../utils/checkCollab");
 
 const Project = require("./../models/projectModel");
 const User = require("./../models/userModel");
@@ -26,25 +27,6 @@ const compareId = (id1, id2) => {
   return id1.toString() === id2.toString();
 };
 
-const checkCollab = async (next, projectId, userId, message, ...permission) => {
-  // Check permission wheather use has permission to create new phase
-  const projectCollab = await Collaborator.findOne({
-    projectId,
-    userId,
-  });
-
-  if (!projectCollab)
-    return next(
-      new AppError("You do not have permission to access this project.", 403)
-    );
-  const permissionIds = await Permission.find({ name: { $in: permission } });
-
-  for (let i = 1; i < permissionIds; ++i) {
-    if (compareId(permissionIds[0]._id, projectCollab.permissionId)) break;
-    if (i === permissionIds.length) return next(new AppError(message, 401));
-  }
-};
-
 /**
  * @desc paginate array by page_size and page_number
  * @param {Array} array any array
@@ -67,7 +49,7 @@ exports.createCategory = catchAsync(async (req, res, next) => {
   if (!testProject) return next(new AppError("Project not exist.", 404));
 
   // Check permission wheather use has permission to create new phase
-  checkCollab(
+  await checkCollab(
     next,
     projectId,
     req.user._id,
@@ -136,7 +118,7 @@ exports.createCategory = catchAsync(async (req, res, next) => {
         attribute.parentCategoryId
       );
       if (!testParentCategory)
-        return next(new AppError("Parent Category not exist", 401));
+        return next(new AppError("Parent Category not exist", 404));
       doc["parentCategoryId"] = attribute.parentCategoryId;
     }
     const newAttribute = await Attribute.create(doc);
@@ -149,9 +131,9 @@ exports.createCategory = catchAsync(async (req, res, next) => {
 exports.getName = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;
   if (!isValidObjectId(projectId))
-    return next(new AppError("Invalid projectId", 401));
+    return next(new AppError("Invalid projectId", 400));
 
-  checkCollab(
+  await checkCollab(
     next,
     projectId,
     req.user._id,
@@ -162,7 +144,7 @@ exports.getName = catchAsync(async (req, res, next) => {
 
   // Check wheather project exist
   const testProject = await Project.findById(projectId);
-  if (!testProject) return next(new AppError("Project not exist.", 401));
+  if (!testProject) return next(new AppError("Project not exist.", 404));
 
   const categories = await Category.aggregate([
     {
@@ -186,20 +168,21 @@ exports.getName = catchAsync(async (req, res, next) => {
 exports.edited = catchAsync(async (req, res, next) => {
   const categoryId = req.params.categoryId;
   if (!isValidObjectId(categoryId))
-    return next(new AppError("Invalid categoryId", 401));
+    return next(new AppError("Invalid categoryId", 400));
 
   // Check wheather category exist
 
   const testCategory = await Category.findById(categoryId);
-  if (!testCategory) return next(new AppError("Category not exist", 401));
+  if (!testCategory) return next(new AppError("Category not exist", 404));
 
   // Check permission wheather use has permission to create new phase
-  checkCollab(
+  await checkCollab(
     next,
     testCategory.projectId,
     req.user._id,
     "You do not have permission to create a new category.",
-    "can_edited"
+    "can_edited",
+    "owner"
   );
 
   // Category
@@ -208,7 +191,7 @@ exports.edited = catchAsync(async (req, res, next) => {
     name: req.body.name,
   });
   if (testCategoryName && !compareId(testCategory._id, categoryId))
-    return next(new AppError("Duplicate Category name", 401));
+    return next(new AppError("Duplicate Category name", 400));
 
   const editedCategory = await Category.findOneAndUpdate(
     {
@@ -225,7 +208,7 @@ exports.edited = catchAsync(async (req, res, next) => {
   // Check all required input
   if (!req.body.name || !req.body.mainAttributeName)
     return next(
-      new AppError("Category required name and mainAttributename", 401)
+      new AppError("Category required name and mainAttributename", 400)
     );
 
   // Check if all attribute has unique name
@@ -233,7 +216,7 @@ exports.edited = catchAsync(async (req, res, next) => {
   attributeName.push(req.body.mainAttributeName);
   for (const otherAttribute of req.body.otherAttribute) {
     if (!otherAttribute.name)
-      return next(new AppError("Attribute required name", 401));
+      return next(new AppError("Attribute required name", 400));
     attributeName.push(otherAttribute.name);
   }
 
@@ -242,7 +225,7 @@ exports.edited = catchAsync(async (req, res, next) => {
       return array.indexOf(value) === array.lastIndexOf(value);
     })
   )
-    return next(new AppError("Every attribute name must be unique", 401));
+    return next(new AppError("Every attribute name must be unique", 400));
 
   // MainAttribute
 
@@ -252,7 +235,7 @@ exports.edited = catchAsync(async (req, res, next) => {
   });
 
   if (testMainAttribute && testMainAttribute.positionInCategory !== 0)
-    return next(new AppError("Duplicate attribute name", 401));
+    return next(new AppError("Duplicate attribute name", 400));
 
   const mainAttribute = await Attribute.findOneAndUpdate(
     {
@@ -273,7 +256,7 @@ exports.edited = catchAsync(async (req, res, next) => {
       // New Attribute
       // Check for all required input
       if (!otherAttribute.name || !otherAttribute.type)
-        return next(new AppError("Otherattribute require name and type", 401));
+        return next(new AppError("Otherattribute require name and type", 400));
       const doc = {
         name: otherAttribute.name,
         type: otherAttribute.type,
@@ -286,13 +269,13 @@ exports.edited = catchAsync(async (req, res, next) => {
       };
       if (otherAttribute.parentCategoryId) {
         if (!isValidObjectId(otherAttribute.parentCategoryId))
-          return next(new AppError("Invalid parentCategoryId", 401));
+          return next(new AppError("Invalid parentCategoryId", 400));
         // Check if parentCategory exist
         const testParentCategory = await Category.findById(
           otherAttribute.parentCategoryId
         );
         if (!testParentCategory)
-          return next(new AppError("Parent Category not exist", 401));
+          return next(new AppError("Parent Category not exist", 404));
         doc["parentCategoryId"] = otherAttribute.parentCategoryId;
       }
       const newAttribute = await Attribute.create(doc);
@@ -300,13 +283,13 @@ exports.edited = catchAsync(async (req, res, next) => {
       // Old attribute
       // Check for all required input
       if (!otherAttribute.name)
-        return next(new AppError("Otherattribute require name", 401));
+        return next(new AppError("Otherattribute require name", 400));
 
       if (!isValidObjectId(otherAttribute.id))
-        return next(new AppError("Invalid attributeid", 401));
+        return next(new AppError("Invalid attributeid", 400));
 
       const testAttribute = await Attribute.findById(otherAttribute.id);
-      if (!testAttribute) return next(new AppErrro("Attribute not exist", 401));
+      if (!testAttribute) return next(new AppError("Attribute not exist", 404));
 
       const editedAttribute = await Attribute.findOneAndUpdate(
         {
@@ -329,12 +312,12 @@ exports.edited = catchAsync(async (req, res, next) => {
 exports.createEntry = catchAsync(async (req, res, next) => {
   const categoryId = req.params.categoryId;
   if (!isValidObjectId(categoryId))
-    return next(new AppError("Invalid categoryId", 401));
+    return next(new AppError("Invalid categoryId", 400));
 
   const testCategory = await Category.findById(categoryId);
-  if (!testCategory) return next(new AppError("Categort not exist", 401));
+  if (!testCategory) return next(new AppError("Categort not exist", 404));
 
-  checkCollab(
+  await checkCollab(
     next,
     testCategory.projectId,
     req.user._id,
@@ -348,10 +331,10 @@ exports.createEntry = catchAsync(async (req, res, next) => {
   for (const attributeData of req.body) {
     // Check attribute existense
     if (!attributeData.name)
-      return next(new AppError("Required attribute name", 401));
+      return next(new AppError("Required attribute name", 400));
 
     const testAttribute = await Attribute.findOne({ name: attributeData.name });
-    if (!testAttribute) return next(new AppError("Attribute not found", 401));
+    if (!testAttribute) return next(new AppError("Attribute not found", 404));
     if (testAttribute.type === "Category reference") {
     }
     attributeDatas.push({
@@ -377,10 +360,10 @@ exports.getEntry = catchAsync(async (req, res, next) => {
   const limit = req.query.limit || 10;
   const categoryId = req.params.categoryId;
   if (!isValidObjectId(categoryId))
-    return next(new AppError("Invalid projectId", 401));
+    return next(new AppError("Invalid projectId", 400));
   const testCategory = await Category.findById(categoryId);
-  if (!testCategory) return next(new AppError("Category not exist", 401));
-  checkCollab(
+  if (!testCategory) return next(new AppError("Category not exist", 404));
+  await checkCollab(
     next,
     testCategory.projectId,
     req.user._id,
@@ -437,7 +420,7 @@ exports.getEntry = catchAsync(async (req, res, next) => {
     const doc = {};
     for (const data of entry.data) {
       const attribute = await Attribute.findById(data.attributeId);
-      if (!attribute) return next(new AppError("Attribute not found", 401));
+      if (!attribute) return next(new AppError("Attribute not found", 404));
       if (attribute.type === "Category reference") {
         const parentDoc = {};
         const parentCategory = await CategoryData.findById(data.data);
@@ -468,13 +451,14 @@ exports.getEntry = catchAsync(async (req, res, next) => {
 
 exports.editedEntry = catchAsync(async (req, res, next) => {
   const entryId = req.params.entryId;
-  if (!isValidObjectId(entryId)) return next(new AppError("Invalid entryId"));
+  if (!isValidObjectId(entryId))
+    return next(new AppError("Invalid entryId", 400));
 
   const testEntry = await CategoryData.findById(entryId);
-  if (!testEntry) return next(new AppError("Entry not exist", 401));
+  if (!testEntry) return next(new AppError("Entry not exist", 404));
   const testCategory = await Category.findById(testEntry.categoryId);
-  if (!testCategory) return next(new AppError("Category not exist", 401));
-  checkCollab(
+  if (!testCategory) return next(new AppError("Category not exist", 404));
+  await checkCollab(
     next,
     testCategory.projectId,
     req.user._id,

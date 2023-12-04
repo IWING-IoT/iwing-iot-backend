@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const catchAsync = require("./../utils/catchAsync");
 const AppError = require("./../utils/appError");
+const checkCollab = require("./../utils/checkCollab");
 
 const Collaborator = require("./../models/collaboratorModel");
 const Phase = require("./../models/phaseModel");
@@ -24,9 +25,9 @@ const compareId = (id1, id2) => {
 
 exports.createPhase = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.projectId))
-    return next(new AppError("Invalid projectId", 401));
+    return next(new AppError("Invalid projectId", 400));
 
-  if (!req.body.name) return next(new AppError("Phase required name.", 401));
+  if (!req.body.name) return next(new AppError("Phase required name.", 400));
 
   // Check permission wheather use has permission to create new phase
   const projectCollab = await Collaborator.findOne({
@@ -36,18 +37,17 @@ exports.createPhase = catchAsync(async (req, res, next) => {
 
   if (!projectCollab)
     return next(
-      new AppError("You do not have permission to access this project.", 401)
+      new AppError("You do not have permission to access this project.", 403)
     );
 
-  const can_edit = await Permission.findOne({ name: "can_edited" });
-  const owner = await Permission.findOne({ name: "owner" });
-  if (
-    !compareId(projectCollab.permissionId, can_edit._id) &&
-    !compareId(projectCollab.permissionId, owner._id)
-  )
-    return next(
-      new AppError("You do not have permission to create a new phase.", 401)
-    );
+  await checkCollab(
+    next,
+    req.params.projectId,
+    req.user._id,
+    "You do not have permission to create a new phase.",
+    "owner",
+    "can_edited"
+  );
 
   const newPhase = await Phase.create({
     name: req.body.name,
@@ -77,13 +77,13 @@ exports.createPhase = catchAsync(async (req, res, next) => {
 
 exports.phaseStatus = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
-    return next(new AppError("Invalid phaseId", 401));
+    return next(new AppError("Invalid phaseId", 400));
 
   const phase = await Phase.findById(req.params.phaseId);
-  if (!phase) return next(new AppError("Phase not found", 401));
+  if (!phase) return next(new AppError("Phase not found", 403));
 
   const project = await Project.findById(phase.projectId);
-  if (!project) return next(new AppError("Project not found", 401));
+  if (!project) return next(new AppError("Project not found", 404));
 
   // Check permission wheather use has permission to change phase status
   const projectCollab = await Collaborator.findOne({
@@ -93,18 +93,17 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
 
   if (!projectCollab)
     return next(
-      new AppError("You do not have permission to access this project.", 401)
+      new AppError("You do not have permission to access this project.", 403)
     );
 
-  const can_edit = await Permission.findOne({ name: "can_edited" });
-  const owner = await Permission.findOne({ name: "owner" });
-  if (
-    !compareId(projectCollab.permissionId, can_edit._id) &&
-    !compareId(projectCollab.permissionId, owner._id)
-  )
-    return next(
-      new AppError("You do not have permission to change phase status.", 401)
-    );
+  await checkCollab(
+    next,
+    project._id,
+    req.user._id,
+    "You do not have permission to change phase status.",
+    "owner",
+    "can_edited"
+  );
 
   const updatedPhase = await Phase.findOneAndUpdate(
     { _id: req.params.phaseId },
@@ -158,13 +157,13 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
 
 exports.deleted = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
-    return next(new AppError("Invalid phaseId", 401));
+    return next(new AppError("Invalid phaseId", 400));
 
   const phase = await Phase.findById(req.params.phaseId);
-  if (!phase) return next(new AppError("Phase not found", 401));
+  if (!phase) return next(new AppError("Phase not found", 404));
 
   const project = await Project.findById(phase.projectId);
-  if (!project) return next(new AppError("Project not found", 401));
+  if (!project) return next(new AppError("Project not found", 404));
 
   // Check permission wheather use has permission to delete phase
   const projectCollab = await Collaborator.findOne({
@@ -174,18 +173,17 @@ exports.deleted = catchAsync(async (req, res, next) => {
 
   if (!projectCollab)
     return next(
-      new AppError("You do not have permission to access this project.", 401)
+      new AppError("You do not have permission to access this project.", 403)
     );
 
-  const can_edit = await Permission.findOne({ name: "can_edited" });
-  const owner = await Permission.findOne({ name: "owner" });
-  if (
-    !compareId(projectCollab.permissionId, can_edit._id) &&
-    !compareId(projectCollab.permissionId, owner._id)
-  )
-    return next(
-      new AppError("You do not have permission to delete phase.", 401)
-    );
+  await checkCollab(
+    next,
+    project._id,
+    req.user._id,
+    "You do not have permission to delete phase.",
+    "owner",
+    "can_edited"
+  );
 
   await Phase.findByIdAndUpdate(req.params.phaseId, {
     isDeleted: true,
@@ -197,16 +195,38 @@ exports.deleted = catchAsync(async (req, res, next) => {
 
 exports.getInfo = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
-    return next(new AppError("Invalid phaseId", 401));
+    return next(new AppError("Invalid phaseId", 400));
 
   const phase = await Phase.findOne({ _id: req.params.phaseId });
-  if (!phase) return next(new AppError("Phase not found", 401));
-  if (phase.isDeleted) return next(new AppError("Phase has been deleted", 401));
+  if (!phase) return next(new AppError("Phase not found", 404));
+  if (phase.isDeleted) return next(new AppError("Phase has been deleted", 400));
 
   const project = await Project.findById(phase.projectId);
-  if (!project) return next(new AppError("Project not found", 401));
+  if (!project) return next(new AppError("Project not found", 404));
 
   const owner = await User.findById(project.owner);
+
+  // Get phase permission
+  const collaborator = await Collaborator.findOne({
+    projectId: project._id,
+    userId: req.user._id,
+  });
+
+  await checkCollab(
+    next,
+    project._id,
+    req.user._id,
+    "You cannot access this phase.",
+    "owner",
+    "can_edited",
+    "can_viewed"
+  );
+
+  if (!collaborator) return next(new AppError("Collaborator not found", 404));
+
+  const permission = await Permission.findById(collaborator.permissionId);
+
+  if (!permission) return next(new AppError("Permission not found", 404));
 
   res.status(200).json({
     status: 200,
@@ -216,14 +236,15 @@ exports.getInfo = catchAsync(async (req, res, next) => {
       ownerName: owner.name,
       startedAt: phase.startedAt,
       endedAt: phase.endedAt,
+      permission: permission.name,
     },
   });
 });
 
 exports.getPhases = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.projectId))
-    return next(new AppError("Invalid projectId", 401));
-  //   const phases = await Phase.find({ projectId: req.params.projectId });
+    return next(new AppError("Invalid projectId", 400));
+
   const match = {};
   if (req.query.type === "finished") {
     match["isActive"] = false;

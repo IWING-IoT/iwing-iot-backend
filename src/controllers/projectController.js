@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const catchAsync = require("../utils/catchAsync");
+const checkCollab = require("./../utils/checkCollab");
 
 const Project = require("./../models/projectModel");
 const Template = require("./../models/templateModel");
@@ -49,7 +50,7 @@ exports.getProjects = catchAsync(async (req, res, next) => {
   } else if (req.query.sortBy === "oldest") {
     sort["createdAt"] = 1;
   } else if (req.query.sortBy)
-    return next(new AppError("Wrong sortBy query", 401));
+    return next(new AppError("Wrong sortBy query", 400));
 
   const collaboratorProject = await Collaborator.aggregate([
     {
