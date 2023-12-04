@@ -260,7 +260,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: {
-      activePhaseId: activePhaseId._id,
+      activePhaseId: activePhaseId ? activePhaseId._id : null,
       ...collaboratorProject[0],
     },
   });
