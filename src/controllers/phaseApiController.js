@@ -48,7 +48,7 @@ exports.createApi = catchAsync(async (req, res, next) => {
     testProject._id,
     req.user._id,
     "You do not have permission to create a new api.",
-    "can_edited",
+    "can_edit",
     "owner"
   );
 
@@ -82,8 +82,8 @@ exports.getApi = catchAsync(async (req, res, next) => {
     testProject._id,
     req.user._id,
     "You do not have permission to view a new api.",
-    "can_edited",
-    "can_viewed"
+    "can_edit",
+    "can_view"
   );
 
   const api = await PhaseApi.aggregate([
@@ -129,7 +129,7 @@ exports.edited = catchAsync(async (req, res, next) => {
     testProject._id,
     req.user._id,
     "You do not have permission to edit a new api.",
-    "can_edited",
+    "can_edit",
     "owner"
   );
 
@@ -183,7 +183,7 @@ exports.deleted = catchAsync(async (req, res, next) => {
     testProject._id,
     req.user._id,
     "You do not have permission to delete a api.",
-    "can_edited",
+    "can_edit",
     "owner"
   );
 

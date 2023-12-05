@@ -46,7 +46,7 @@ exports.createPhase = catchAsync(async (req, res, next) => {
     req.user._id,
     "You do not have permission to create a new phase.",
     "owner",
-    "can_edited"
+    "can_edit"
   );
 
   const newPhase = await Phase.create({
@@ -102,7 +102,7 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
     req.user._id,
     "You do not have permission to change phase status.",
     "owner",
-    "can_edited"
+    "can_edit"
   );
 
   const updatedPhase = await Phase.findOneAndUpdate(
@@ -182,7 +182,7 @@ exports.deleted = catchAsync(async (req, res, next) => {
     req.user._id,
     "You do not have permission to delete phase.",
     "owner",
-    "can_edited"
+    "can_edit"
   );
 
   await Phase.findByIdAndUpdate(req.params.phaseId, {
@@ -218,8 +218,8 @@ exports.getInfo = catchAsync(async (req, res, next) => {
     req.user._id,
     "You cannot access this phase.",
     "owner",
-    "can_edited",
-    "can_viewed"
+    "can_edit",
+    "can_view"
   );
 
   if (!collaborator) return next(new AppError("Collaborator not found", 404));

@@ -284,7 +284,7 @@ exports.archived = catchAsync(async (req, res, next) => {
       new AppError("You do not have permission to access this project", 403)
     );
 
-  const can_edit = await Permission.findOne({ name: "can_edited" });
+  const can_edit = await Permission.findOne({ name: "can_edit" });
   const owner = await Permission.findOne({ name: "owner" });
   if (
     !compareId(projectCollab.permissionId, can_edit._id) &&
@@ -349,7 +349,7 @@ exports.edited = catchAsync(async (req, res, next) => {
       new AppError("You do not have permission to access this project", 403)
     );
 
-  const can_edit = await Permission.findOne({ name: "can_edited" });
+  const can_edit = await Permission.findOne({ name: "can_edit" });
   const owner = await Permission.findOne({ name: "owner" });
   if (
     !compareId(projectCollab.permissionId, can_edit._id) &&

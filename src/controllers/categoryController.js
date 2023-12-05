@@ -55,7 +55,7 @@ exports.createCategory = catchAsync(async (req, res, next) => {
     req.user._id,
     "You do not have permission to create a new category.",
     "owner",
-    "can_edited"
+    "can_edit"
   );
 
   // Check all required input
@@ -138,8 +138,8 @@ exports.getName = catchAsync(async (req, res, next) => {
     projectId,
     req.user._id,
     "You don't have permission to viewed project category.",
-    "can_edited",
-    "can_viewed"
+    "can_edit",
+    "can_view"
   );
 
   // Check wheather project exist
@@ -181,7 +181,7 @@ exports.edited = catchAsync(async (req, res, next) => {
     testCategory.projectId,
     req.user._id,
     "You do not have permission to create a new category.",
-    "can_edited",
+    "can_edit",
     "owner"
   );
 
@@ -322,7 +322,7 @@ exports.createEntry = catchAsync(async (req, res, next) => {
     testCategory.projectId,
     req.user._id,
     "You don't have permission to viewed project category.",
-    "can_edited"
+    "can_edit"
   );
 
   // Check all input validation
@@ -368,8 +368,8 @@ exports.getEntry = catchAsync(async (req, res, next) => {
     testCategory.projectId,
     req.user._id,
     "You don't have permission to viewed project category.",
-    "can_edited",
-    "can_viewed"
+    "can_edit",
+    "can_view"
   );
   const category = await Category.findById(categoryId);
 
@@ -463,7 +463,7 @@ exports.editedEntry = catchAsync(async (req, res, next) => {
     testCategory.projectId,
     req.user._id,
     "You don't have permission to viewed project category.",
-    "can_edited"
+    "can_edit"
   );
   const newDatas = [];
   let i = 0;

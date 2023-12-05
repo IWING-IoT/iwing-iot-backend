@@ -64,7 +64,7 @@ const compareId = (id1, id2) => {
 //   });
 //   if (!creatorCollaborator) return next(new AppError("Project not exist", 401));
 //   // Get permission owner and can_edit
-//   const can_edit = await Permission.findOne({ name: "can_edited" });
+//   const can_edit = await Permission.findOne({ name: "can_edit" });
 //   const owner = await Permission.findOne({ name: "owner" });
 //   if (
 //     !compareId(creatorCollaborator.permissionId, can_edit._id) &&
@@ -95,7 +95,7 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
     projectId,
     req.user._id,
     "You do not have permission to create a new category.",
-    "can_edited",
+    "can_edit",
     "owner"
   );
 
@@ -216,7 +216,7 @@ exports.editCollaborator = catchAsync(async (req, res, next) => {
     project._id,
     req.user._id,
     "You do not have edit to edit collaborator.",
-    "can_edited",
+    "can_edit",
     "owner"
   );
 
@@ -257,7 +257,7 @@ exports.deleteCollaborator = catchAsync(async (req, res, next) => {
     testCollaborator.projectId,
     req.user._id,
     "You do not have edit to delete collaborator.",
-    "can_edited",
+    "can_edit",
     "owner"
   );
   // Check is permission a owner
