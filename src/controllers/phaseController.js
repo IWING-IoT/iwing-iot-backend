@@ -75,6 +75,86 @@ exports.createPhase = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
+// exports.phaseStatus = catchAsync(async (req, res, next) => {
+//   if (!isValidObjectId(req.params.phaseId))
+//     return next(new AppError("Invalid phaseId", 400));
+
+//   const phase = await Phase.findById(req.params.phaseId);
+//   if (!phase) return next(new AppError("Phase not found", 403));
+
+//   const project = await Project.findById(phase.projectId);
+//   if (!project) return next(new AppError("Project not found", 404));
+
+//   // Check permission wheather use has permission to change phase status
+//   const projectCollab = await Collaborator.findOne({
+//     projectId: project._id,
+//     userId: req.user._id,
+//   });
+
+//   if (!projectCollab)
+//     return next(
+//       new AppError("You do not have permission to access this project.", 403)
+//     );
+
+//   await checkCollab(
+//     next,
+//     project._id,
+//     req.user._id,
+//     "You do not have permission to change phase status.",
+//     "owner",
+//     "can_edit"
+//   );
+
+// const updatedPhase = await Phase.findOneAndUpdate(
+//   { _id: req.params.phaseId },
+//   {
+//     isActive: req.body.isActive,
+//     editedAt: Date.now(),
+//     editedBy: req.user._id,
+//     endedAt: req.body.isActive ? null : Date.now(),
+//   }
+// );
+
+// // Change other phase to inactive if change phase to active
+// if (req.body.isActive) {
+//   const otherPhasaes = await Phase.find({
+//     projectId: project._id,
+//     isDeleted: false,
+//   });
+//   for (const phase of otherPhasaes) {
+//     if (compareId(phase._id, updatedPhase._id)) continue;
+//     await Phase.findByIdAndUpdate(
+//       { _id: phase._id },
+//       {
+//         isActive: false,
+//         endedAt: Date.now(),
+//       }
+//     );
+//   }
+// } else {
+//   const otherPhasaes = await Phase.find({
+//     projectId: project._id,
+//     isDeleted: false,
+//   });
+
+//   otherPhasaes.sort((a, b) => (a.startedAt > b.startedAt ? -1 : 1));
+//   if (otherPhasaes.length >= 1) {
+//     await Phase.findOneAndUpdate(
+//       { _id: otherPhasaes[0]._id },
+//       { isActive: true, endedAt: null }
+//     );
+//   }
+//   for (const phase of otherPhasaes) {
+//     if (compareId(phase._id, otherPhasaes[0]._id)) continue;
+//     await Phase.findByIdAndUpdate(phase._id, {
+//       isActive: false,
+//       endedAt: Date.now(),
+//     });
+//   }
+// }
+// res.status(204).json();
+// });
+
 exports.phaseStatus = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
     return next(new AppError("Invalid phaseId", 400));
@@ -85,7 +165,7 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
   const project = await Project.findById(phase.projectId);
   if (!project) return next(new AppError("Project not found", 404));
 
-  // Check permission wheather use has permission to change phase status
+  // Check permission wheather use has permission to delete phase
   const projectCollab = await Collaborator.findOne({
     projectId: project._id,
     userId: req.user._id,
@@ -100,10 +180,13 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
     next,
     project._id,
     req.user._id,
-    "You do not have permission to change phase status.",
+    "You do not have permission to change phase stauts.",
     "owner",
     "can_edit"
   );
+
+  if (!req.body.isActive)
+    return next(new AppError("You cannot change phase to active", 400));
 
   const updatedPhase = await Phase.findOneAndUpdate(
     { _id: req.params.phaseId },
@@ -111,47 +194,9 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
       isActive: req.body.isActive,
       editedAt: Date.now(),
       editedBy: req.user._id,
-      endedAt: req.body.isActive ? null : Date.now(),
     }
   );
 
-  // Change other phase to inactive if change phase to active
-  if (req.body.isActive) {
-    const otherPhasaes = await Phase.find({
-      projectId: project._id,
-      isDeleted: false,
-    });
-    for (const phase of otherPhasaes) {
-      if (compareId(phase._id, updatedPhase._id)) continue;
-      await Phase.findByIdAndUpdate(
-        { _id: phase._id },
-        {
-          isActive: false,
-          endedAt: Date.now(),
-        }
-      );
-    }
-  } else {
-    const otherPhasaes = await Phase.find({
-      projectId: project._id,
-      isDeleted: false,
-    });
-
-    otherPhasaes.sort((a, b) => (a.startedAt > b.startedAt ? -1 : 1));
-    if (otherPhasaes.length >= 1) {
-      await Phase.findOneAndUpdate(
-        { _id: otherPhasaes[0]._id },
-        { isActive: true, endedAt: null }
-      );
-    }
-    for (const phase of otherPhasaes) {
-      if (compareId(phase._id, otherPhasaes[0]._id)) continue;
-      await Phase.findByIdAndUpdate(phase._id, {
-        isActive: false,
-        endedAt: Date.now(),
-      });
-    }
-  }
   res.status(204).json();
 });
 

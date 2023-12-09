@@ -21,10 +21,14 @@ module.exports = async (next, projectId, userId, message, ...permission) => {
     );
   const permissionIds = await Permission.find({ name: { $in: permission } });
 
-  let i = 1;
-  for (const permissionI of permissionIds) {
-    if (compareId(permissionIds[i]._id, projectCollab.permissionId)) break;
-    if (i === permissionIds.length) return next(new AppError(message, 401));
-    i++;
-  }
+  let checkPermission = false;
+  permissionIds.forEach((permission) => {
+    console.log(permission._id);
+
+    if ((compareId(permission._id), projectCollab.permissionId)) {
+      checkPermission = true;
+    }
+  });
+
+  if (!checkPermission) return next(new AppError(message, 401));
 };
