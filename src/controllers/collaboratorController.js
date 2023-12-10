@@ -210,7 +210,7 @@ exports.editCollaborator = catchAsync(async (req, res, next) => {
   });
 
   // Check is permission a owner
-  if (newPermission.equals(owner._id))
+  if (newPermission.permission === "owner")
     return next(new AppError("Collaborators cannot be owner", 400));
 
   // Cannot change owner to other permission
