@@ -145,7 +145,7 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
       userId: collaboratorAccount._id,
       projectId,
     });
-    
+
     if (testCollaborator) {
       invalidCollaborator.push({
         email: collaborator.email,
@@ -194,8 +194,11 @@ exports.editCollaborator = catchAsync(async (req, res, next) => {
     );
 
   const permission = await Permission.findOne({
-    _id: newPermission.permission,
+    name: newPermission.permission,
   });
+  if (newPermission.name === "owner")
+    return next(new AppError("Cannot change owner permission", 400));
+
   if (!permission)
     return next(new AppError("Permission needed not exist", 404));
 
@@ -230,7 +233,7 @@ exports.editCollaborator = catchAsync(async (req, res, next) => {
   const editedCollaboator = await Collaborator.findOneAndUpdate(
     { _id: collaboratorId },
     {
-      permissionId: newPermission.permission,
+      permissionId: permission._id,
       editedAt: Date.now(),
       editedBy: req.user._id,
     }
