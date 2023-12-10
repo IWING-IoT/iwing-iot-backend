@@ -65,13 +65,12 @@ exports.getUser = catchAsync(async (req, res, next) => {
         name: "$name",
         role: "$role.name",
         userStatus: "$userStatus",
-
       },
     },
   ]);
 
   res.status(200).json({
     status: "success",
-    data: paginate(users, limit, page),
+    data: users,
   });
 });
