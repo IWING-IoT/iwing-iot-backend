@@ -267,6 +267,7 @@ exports.deleteCollaborator = catchAsync(async (req, res, next) => {
     "can_edit",
     "owner"
   );
+  const owner = await Collaborator.findOne({ name: "owner" });
   // Check is permission a owner
   if (compareId(testCollaborator.permissionId, owner._id))
     return next(new AppError("Cannot delete owner permission", 400));
