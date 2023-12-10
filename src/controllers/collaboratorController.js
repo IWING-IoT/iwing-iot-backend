@@ -182,10 +182,7 @@ exports.editCollaborator = catchAsync(async (req, res, next) => {
       )
     );
 
-  if (
-    !isValidObjectId(collaboratorId) ||
-    !isValidObjectId(newPermission.permission)
-  )
+  if (!isValidObjectId(collaboratorId))
     return next(
       new AppError(
         "Please enter valid mongoDB ID for collaboratorId or permissionId",
