@@ -86,37 +86,6 @@ const compareId = (id1, id2) => {
 //   res.status(201).json();
 // });
 
-const checkCollab2 = async (
-  next,
-  projectId,
-  userId,
-  message,
-  ...permission
-) => {
-  // Check permission wheather use has permission to create new phase
-  const projectCollab = await Collaborator.findOne({
-    projectId,
-    userId,
-  });
-
-  if (!projectCollab)
-    return next(
-      new AppError("You do not have permission to access this project.", 403)
-    );
-  const permissionIds = await Permission.find({ name: { $in: permission } });
-
-  let checkPermission = false;
-  permissionIds.forEach((permission) => {
-    console.log(permission._id);
-
-    if ((compareId(permission._id), projectCollab.permissionId)) {
-      checkPermission = true;
-    }
-  });
-
-  if (!checkPermission) return next(new AppError(message, 401));
-};
-
 exports.createCollaborator = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;
   const invalidCollaborator = [];
@@ -125,12 +94,10 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
     next,
     projectId,
     req.user.id,
-    "You do not have permission to create a new category.",
+    "You do not have permission to create a new collaboratoe.",
     "can_edit",
     "owner"
   );
-
-  console.log("Hello");
 
   for (const collaborator of req.body) {
     // Check if request has all required input
@@ -146,8 +113,14 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
       continue;
     }
 
+    if (collaborator.permission === "owner")
+      invalidCollaborator.push({
+        email: collaborator.email,
+        reason: "Cannot not add owner permission",
+      });
+
     const permission = await Permission.findOne({
-      _id: collaborator.permission,
+      name: collaborator.permission,
     });
     if (!permission) {
       invalidCollaborator.push({
@@ -172,6 +145,7 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
       userId: collaboratorAccount._id,
       projectId,
     });
+    
     if (testCollaborator) {
       invalidCollaborator.push({
         email: collaborator.email,
@@ -182,7 +156,7 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
 
     const newCollaborator = await Collaborator.create({
       userId: collaboratorAccount._id,
-      permissionId: collaborator.permission,
+      permissionId: permission._id,
       projectId,
       createdAt: Date.now(),
       createdBy: req.user._id,
