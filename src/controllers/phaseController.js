@@ -185,7 +185,7 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
     "can_edit"
   );
 
-  if (!req.body.isActive)
+  if (req.body.isActive)
     return next(new AppError("You cannot change phase to active", 400));
 
   const updatedPhase = await Phase.findOneAndUpdate(
