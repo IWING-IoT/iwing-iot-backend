@@ -330,6 +330,17 @@ exports.deleted = catchAsync(async (req, res, next) => {
     },
     {
       isDeleted: true,
+      deletedAt: Date.now(),
+    }
+  );
+
+  const updatePhase = await Phase.updateMany(
+    {
+      projectId: req.params.projectId,
+    },
+    {
+      isDeleted: true,
+      deletedAt: Date.npw(),
     }
   );
   res.status(204).json();
