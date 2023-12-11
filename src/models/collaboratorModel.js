@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
-const { collection } = require("./userModel");
 
-collaboratorSchema = new mongoose.Schema({
+const collaboratorSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.ObjectId,
     ref: "User",

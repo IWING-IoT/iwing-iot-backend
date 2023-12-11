@@ -274,7 +274,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
   if (!permission) return next(new AppError("Permission not found", 404));
 
   res.status(200).json({
-    status: 200,
+    status: "success",
     data: {
       id: phase._id,
       name: phase.name,

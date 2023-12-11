@@ -363,7 +363,12 @@ exports.edited = catchAsync(async (req, res, next) => {
     {
       _id: req.params.projectId,
     },
-    { editedAt: Date.now(), editedBy: req.user._id, ...req.body }
+    {
+      isDeleted: true,
+      editedAt: Date.now(),
+      editedBy: req.user._id,
+      ...req.body,
+    }
   );
   res.status(204).json();
 });
