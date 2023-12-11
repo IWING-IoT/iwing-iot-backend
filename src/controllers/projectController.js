@@ -52,6 +52,10 @@ exports.getProjects = catchAsync(async (req, res, next) => {
   } else if (req.query.sortBy)
     return next(new AppError("Wrong sortBy query", 400));
 
+  if (req.query.status === "archived") {
+    match["project.isArchived"] = true;
+  }
+
   const collaboratorProject = await Collaborator.aggregate([
     {
       $match: { userId: new mongoose.Types.ObjectId(req.user._id) },
@@ -109,6 +113,7 @@ exports.getProjects = catchAsync(async (req, res, next) => {
         },
         startedAt: "$project.startedAt",
         createdAt: "$project.createdAt",
+        isArchived: "$project.isArchived",
       },
     },
     {
