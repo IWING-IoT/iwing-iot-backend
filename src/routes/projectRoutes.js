@@ -17,7 +17,7 @@ router.patch(
   projectController.archived
 );
 
-router.patch(
+router.delete(
   "/:projectId/deleted",
   authController.protect,
   projectController.deleted
