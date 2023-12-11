@@ -329,7 +329,7 @@ exports.deleted = catchAsync(async (req, res, next) => {
       _id: req.params.projectId,
     },
     {
-      isDeleted: req.body.isDeleted,
+      isDeleted: true,
     }
   );
   res.status(204).json();
@@ -364,7 +364,6 @@ exports.edited = catchAsync(async (req, res, next) => {
       _id: req.params.projectId,
     },
     {
-      isDeleted: true,
       editedAt: Date.now(),
       editedBy: req.user._id,
       ...req.body,
