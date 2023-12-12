@@ -304,8 +304,13 @@ exports.archived = catchAsync(async (req, res, next) => {
 
   // Update all phase to inactive
   const updatedPhase = await Phase.updateMany(
-    { projectId: req.params.projectId },
-    { isActive: false, editedBy: req.user._id, editedAt: Date.now() }
+    { projectId: req.params.projectId, isActive: true },
+    {
+      isActive: false,
+      editedBy: req.user._id,
+      editedAt: Date.now(),
+      endedAt: Date.now(),
+    }
   );
 
   const updatedProject = await Project.findOneAndUpdate(
@@ -351,6 +356,7 @@ exports.deleted = catchAsync(async (req, res, next) => {
     }
   );
 
+  // Update phase to inactive
   const updatePhase = await Phase.updateMany(
     {
       projectId: req.params.projectId,
@@ -360,6 +366,8 @@ exports.deleted = catchAsync(async (req, res, next) => {
       deletedAt: Date.now(),
     }
   );
+  // change active phase endDate to present
+
   res.status(204).json();
 });
 
