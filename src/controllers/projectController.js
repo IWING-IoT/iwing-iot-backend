@@ -357,7 +357,7 @@ exports.deleted = catchAsync(async (req, res, next) => {
     },
     {
       isDeleted: true,
-      deletedAt: Date.npw(),
+      deletedAt: Date.now(),
     }
   );
   res.status(204).json();
