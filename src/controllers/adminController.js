@@ -18,6 +18,16 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
+/**
+ * @desc check wheather input id is valid mongodb objectID
+ * @param {String} id that want to check
+ * @return {Boolean} return true if inpur is valid mongodb;otherwise false
+ */
+const isValidObjectId = (id) => {
+  if (mongoose.isValidObjectId(id)) return true;
+  return false;
+};
+
 exports.addUser = catchAsync(async (req, res, next) => {
   const { name, email, password, role } = req.body;
 
@@ -73,4 +83,17 @@ exports.getUser = catchAsync(async (req, res, next) => {
     status: "success",
     data: users,
   });
+});
+
+exports.edited = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.accountId))
+    return next(new AppError("Invalid ID", 400));
+
+  const testUser = await User.findById(req.parmas.accountId);
+
+  const editedUser = await User.findOneAndUpdate(
+    { _id: req.params.accountId },
+    { ...req.body }
+  );
+  res.status(204).json();
 });
