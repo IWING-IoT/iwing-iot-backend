@@ -19,4 +19,11 @@ router.get(
   adminController.getUser
 );
 
+router.patch(
+  "/account/:accountId",
+  authController.protect,
+  authController.restrictTo("admin"),
+  adminController.edited
+);
+
 module.exports = router;
