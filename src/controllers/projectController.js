@@ -284,6 +284,9 @@ exports.archived = catchAsync(async (req, res, next) => {
     userId: req.user._id,
   });
 
+  if (!req.body.isArchived)
+    return next(new AppError("Cannot unarchived project", 400));
+
   if (!projectCollab)
     return next(
       new AppError("You do not have permission to access this project", 403)
@@ -299,12 +302,20 @@ exports.archived = catchAsync(async (req, res, next) => {
       new AppError("You do not have permission to archive project", 403)
     );
 
+  // Update all phase to inactive
+  const updatedPhase = await Phase.updateMany(
+    { projectId: req.params.projectId },
+    { isActive: false, editedBy: req.user._id, editedAt: Date.now() }
+  );
+
   const updatedProject = await Project.findOneAndUpdate(
     {
       _id: req.params.projectId,
     },
     {
       isArchived: req.body.isArchived,
+      editedBy: req.user._id,
+      editedAt: Date.now(),
     }
   );
   res.status(204).json();
