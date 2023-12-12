@@ -91,9 +91,16 @@ exports.edited = catchAsync(async (req, res, next) => {
 
   const testUser = await User.findById(req.parmas.accountId);
 
+  const newRole = await Role.findOne({ name: req.body.role });
+
   const editedUser = await User.findOneAndUpdate(
     { _id: req.params.accountId },
-    { ...req.body }
+    {
+      name: req.body.name,
+      email: req.body.email,
+      roleId: newRole ? newRole._id : testUser.roleId,
+      editedAt: Date.now(),
+    }
   );
   res.status(204).json();
 });

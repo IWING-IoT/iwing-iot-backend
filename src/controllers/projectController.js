@@ -316,6 +316,7 @@ exports.archived = catchAsync(async (req, res, next) => {
       isArchived: req.body.isArchived,
       editedBy: req.user._id,
       editedAt: Date.now(),
+      endedAt: Date.now(),
     }
   );
   res.status(204).json();
