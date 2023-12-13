@@ -12,8 +12,7 @@ const projectSchema = new mongoose.Schema({
     required: [true, "A project must has a owner Id"],
   },
   location: {
-    type: mongoose.Schema.ObjectId,
-    ref: "Location",
+    type: String,
     required: [true, "A project must has a location"],
   },
   template: {

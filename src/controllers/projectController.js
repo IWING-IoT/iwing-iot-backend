@@ -91,26 +91,12 @@ exports.getProjects = catchAsync(async (req, res, next) => {
       $unwind: "$owner",
     },
     {
-      $lookup: {
-        from: "locations",
-        localField: "project.location",
-        foreignField: "_id",
-        as: "location",
-      },
-    },
-    {
-      $unwind: "$location",
-    },
-    {
       $project: {
         _id: 0,
         id: "$project._id",
         name: "$project.name",
         owner: "$owner.name",
-        location: {
-          th_name: "$location.th_name",
-          en_name: "$location.en_name",
-        },
+        location: "$project.location",
         startedAt: "$project.startedAt",
         createdAt: "$project.createdAt",
         isArchived: "$project.isArchived",
@@ -139,8 +125,7 @@ exports.createProject = catchAsync(async (req, res, next) => {
     !project.name ||
     !project.template ||
     !project.location ||
-    !isValidObjectId(project.template) ||
-    !isValidObjectId(project.location)
+    !isValidObjectId(project.template)
   )
     return next(
       new AppError(
@@ -151,9 +136,6 @@ exports.createProject = catchAsync(async (req, res, next) => {
 
   const testTemplate = await Template.findById(project.template);
   if (!testTemplate) return next(new AppError("Template not found", 404));
-
-  const testLocation = await Location.findById(project.location);
-  if (!testLocation) return next(new AppError("Location not found", 404));
 
   // Create new project
   const newProject = await Project.create({
@@ -221,17 +203,6 @@ exports.getInfo = catchAsync(async (req, res, next) => {
     },
     {
       $lookup: {
-        from: "locations",
-        localField: "project.location",
-        foreignField: "_id",
-        as: "location",
-      },
-    },
-    {
-      $unwind: "$location",
-    },
-    {
-      $lookup: {
         from: "permissions",
         localField: "permissionId",
         foreignField: "_id",
@@ -247,10 +218,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
         name: "$project.name",
         description: "$project.description",
         ownerName: "$owner.name",
-        location: {
-          th_name: "$location.th_name",
-          en_name: "$location.en_name",
-        },
+        location: "$project.location",
 
         startedAt: "$project.startedAt",
         endedAt: "$project.endedAt",
