@@ -89,7 +89,7 @@ exports.edited = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.accountId))
     return next(new AppError("Invalid ID", 400));
 
-  const testUser = await User.findById(req.parmas.accountId);
+  const testUser = await User.findById(req.params.accountId);
 
   const newRole = await Role.findOne({ name: req.body.role });
 
