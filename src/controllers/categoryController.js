@@ -139,7 +139,8 @@ exports.getName = catchAsync(async (req, res, next) => {
     req.user._id,
     "You don't have permission to viewed project category.",
     "can_edit",
-    "can_view"
+    "can_view",
+    "owner"
   );
 
   // Check wheather project exist
@@ -322,7 +323,8 @@ exports.createEntry = catchAsync(async (req, res, next) => {
     testCategory.projectId,
     req.user._id,
     "You don't have permission to viewed project category.",
-    "can_edit"
+    "can_edit",
+    "owner"
   );
 
   // Check all input validation
@@ -369,7 +371,8 @@ exports.getEntry = catchAsync(async (req, res, next) => {
     req.user._id,
     "You don't have permission to viewed project category.",
     "can_edit",
-    "can_view"
+    "can_view",
+    "owner"
   );
   const category = await Category.findById(categoryId);
 
