@@ -1,5 +1,23 @@
 const mongoose = require("mongoose");
 
+const typeEnum = ["string", "image", "category_reference"];
+
+const attributeDataSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Attribute data require name"],
+  },
+  type: {
+    type: String,
+    required: [true, "Attribute data require type"],
+    enum: typeEnum,
+  },
+  parentCategoryId: {
+    type: mongoose.Schema.ObjectId,
+    ref: "Category",
+  },
+});
+
 const categorySchema = new mongoose.Schema({
   projectId: {
     type: mongoose.Schema.ObjectId,
@@ -12,14 +30,20 @@ const categorySchema = new mongoose.Schema({
     maxlength: 50,
   },
   mainAttribute: {
-    type: mongoose.Schema.ObjectId,
-    ref: "Attribute",
+    type: String,
+  },
+  description: {
+    type: String,
   },
   createdAt: Date,
   createdBy: {
     type: mongoose.Schema.ObjectId,
     ref: "User",
   },
+  otherAttributes: {
+    type: [attributeDataSchema],
+  },
+
   editedAt: Date,
   editedBy: {
     type: mongoose.Schema.ObjectId,

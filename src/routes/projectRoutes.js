@@ -4,7 +4,7 @@ const projectController = require("./../controllers/projectController");
 const authController = require("./../controllers/authController");
 const collaboratorController = require("./../controllers/collaboratorController");
 const phaseController = require("./../controllers/phaseController");
-const categoryController = require("./../controllers/categoryController");
+const categoryController = require("../controllers/categoryController");
 
 const router = express.Router();
 
@@ -58,7 +58,7 @@ router.post(
 router.get(
   "/:projectId/category",
   authController.protect,
-  categoryController.getName
+  categoryController.getCategories
 );
 
 module.exports = router;

@@ -151,6 +151,12 @@ exports.getInfo = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid phaseId", 400));
 
   const phase = await Phase.findOne({ _id: req.params.phaseId });
+
+  // console.log(
+  //   await Phase.findOne({ _id: req.params.phaseId }).explain("executionStats")
+  // );
+  console.log(phase);
+
   if (!phase) return next(new AppError("Phase not found", 404));
   if (phase.isDeleted) return next(new AppError("Phase has been deleted", 400));
 
