@@ -72,7 +72,7 @@ exports.getCategoryInfo = catchAsync(async (req, res, next) => {
     accessorKey: testCategory.mainAttribute,
     type: "string",
   });
-  let id = 1;
+  let id = 2;
   for (const attribute of testCategory.otherAttributes) {
     let tempDefinition = {
       id,
