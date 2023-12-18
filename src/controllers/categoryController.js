@@ -208,7 +208,28 @@ exports.createCategory = catchAsync(async (req, res, next) => {
 });
 
 exports.getEntryByCategory = catchAsync(async (req, res, next) => {
-  res.status(200).json();
+  if (!isValidObjectId(req.params.categoryId))
+    return next(new AppError("Invalid categoryId", 400));
+
+  const testCategory = await Category.findById(req.params.categoryId);
+  if (!testCategory) return next(new AppError("Category not found", 404));
+
+  const categoryData = await CategoryData.find({
+    categoryId: req.params.categoryId,
+  });
+
+  const formatOutput = [];
+  for (const data of categoryData) {
+    formatOutput.push({
+      name: data[`${testCategory.mainAttribute}`],
+      id: data._id,
+    });
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: formatOutput,
+  });
 });
 
 exports.addEntry = catchAsync(async (req, res, next) => {
