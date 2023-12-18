@@ -63,6 +63,7 @@ exports.getCategoryInfo = catchAsync(async (req, res, next) => {
 
   const formatOutput = {
     name: testCategory.name,
+    description: testCategory.description ? testCategory.description : "",
     mainAttribute: testCategory.mainAttribute,
   };
   const entryDefinitions = [];
