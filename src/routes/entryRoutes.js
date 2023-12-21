@@ -1,10 +1,16 @@
-// const express = require("express");
+const express = require("express");
 
-// const authController = require("./../controllers/authController");
-// const categoryController = require("../controllers/categoryControllerOld");
+const authController = require("./../controllers/authController");
+const categoryController = require("../controllers/categoryController");
 
-// const router = express.Router();
+const router = express.Router();
 
-// router.put("/:entryId", authController.protect, categoryController.editedEntry);
+router.put("/:entryId", authController.protect, categoryController.editEntry);
 
-// module.exports = router;
+router.delete(
+  "/:entryId",
+  authController.protect,
+  categoryController.deleteEntry
+);
+
+module.exports = router;

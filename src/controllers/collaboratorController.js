@@ -23,68 +23,7 @@ const compareId = (id1, id2) => {
   return id1.toString() === id2.toString();
 };
 
-// exports.createCollaborator = catchAsync(async (req, res, next) => {
-//   const collaborator = req.body;
-//   const projectId = req.params.projectId;
 
-//   // Check if request has all required input
-//   if (!collaborator.email || !collaborator.permission)
-//     return next(
-//       new AppError(
-//         "Please input all required input for creating new project.",
-//         401
-//       )
-//     );
-
-//   if (!isValidObjectId(projectId))
-//     return next(
-//       new AppError("Please enter valid mongoDB ID for projectID", 401)
-//     );
-
-//   const permission = await Permission.findOne({ _id: collaborator.permission });
-//   if (!permission)
-//     return next(new AppError("Permission needed not exist", 401));
-
-//   const collaboratorAccount = await User.findOne({
-//     email: collaborator.email,
-//   });
-//   if (!collaboratorAccount) return next(new AppError("User not found", 401));
-
-//   const testCollaborator = await Collaborator.findOne({
-//     userId: collaboratorAccount._id,
-//     projectId,
-//   });
-//   if (testCollaborator)
-//     return next(new AppError("Collaborator already exist", 401));
-
-//   // Check creator permission to add collaborator
-//   const creatorCollaborator = await Collaborator.findOne({
-//     projectId: projectId,
-//     userId: req.user._id,
-//   });
-//   if (!creatorCollaborator) return next(new AppError("Project not exist", 401));
-//   // Get permission owner and can_edit
-//   const can_edit = await Permission.findOne({ name: "can_edit" });
-//   const owner = await Permission.findOne({ name: "owner" });
-//   if (
-//     !compareId(creatorCollaborator.permissionId, can_edit._id) &&
-//     !compareId(creatorCollaborator.permissionId, owner._id)
-//   )
-//     return next(
-//       new AppError("You do not have permission to add new collaborator", 401)
-//     );
-
-//   const newCollaborator = await Collaborator.create({
-//     userId: collaboratorAccount._id,
-//     permissionId: collaborator.permission,
-//     projectId,
-//     createdAt: Date.now(),
-//     createdBy: req.user._id,
-//     editedAt: Date.now(),
-//     editedBy: req.user._id,
-//   });
-//   res.status(201).json();
-// });
 
 exports.createCollaborator = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;

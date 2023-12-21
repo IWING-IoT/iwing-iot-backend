@@ -10,6 +10,9 @@ const CategoryData = require("../models/categoryDataModel");
 const Category = require("../models/categoryModel");
 const Collaborator = require("../models/collaboratorModel");
 const Permission = require("../models/permissionModel");
+const Attribute = require("../models/attributeModel");
+const AttributeValue = require("../models/attributeValueModel");
+const CategoryEntity = require("../models/categoryEntityModel");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -37,243 +40,324 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
-exports.getCategories = catchAsync(async (req, res, next) => {
+// POST /api/project/:projectId/category (testing)
+exports.createCategory = catchAsync(async (req, res, next) => {
+  await checkCollab(
+    next,
+    req.params.projectId,
+    req.user.id,
+    "You do not have permission to create a new category.",
+    "can_edit",
+    "owner"
+  );
+
   if (!isValidObjectId(req.params.projectId))
     return next(new AppError("Invalid projectId", 400));
 
   const testProject = await Project.findById(req.params.projectId);
   if (!testProject) return next(new AppError("Project not found", 404));
 
-  const categories = await Category.find(
-    { projectId: req.params.projectId },
-    { id: "$_id", name: 1, _id: 0 }
+  if (!req.body.name || !req.body.mainAttribute)
+    return next(new AppError("Invalid input", 400));
+
+  const testCategory = await Category.findOne({ name: req.body.name });
+  if (!testCategory) return next(new AppError("Duplicate category name", 400));
+
+  // Create category
+  const createCategory = await Category.create({
+    name: req.body.name,
+    description: req.body.description ? req.body.description : "",
+    projectId: req.params.projectId,
+    createdAt: Date.now(),
+    createdBy: req.user.id,
+  });
+
+  // Create Attribute
+  // Main
+  const mainAttribute = await Attribute.create({
+    categoryId: createCategory._id,
+    name: req.body.mainAttribute,
+    type: "string",
+    position: 0,
+    createdAt: Date.now(),
+    createdBy: req.user.id,
+  });
+  // Others
+  let position = 1;
+  for (const attribute of req.body.otherAttribute) {
+    let tempAttribute = {
+      categoryId: createCategory._id,
+      position,
+      createdAt: Date.now(),
+      createdBy: req.user.id,
+    };
+
+    if (!attribute.name || !attribute.type)
+      return next(new AppError("Invalid input", 400));
+    tempAttribute["name"] = attribute.name;
+    tempAttribute["type"] = attribute.type;
+
+    if (attribute.type === "category_reference") {
+      if (!isValidObjectId(attribute.referenceFrom))
+        return next(new AppError("Invalid parentId", 400));
+
+      const testParentCategory = await Category.findById(
+        attribute.referenceFrom
+      );
+      if (!testParentCategory)
+        return next(new AppError("Parent Categroy not found", 404));
+
+      tempAttribute["parentCategoryId"] = attribute.referenceFrom;
+    }
+
+    const createAttribute = await Attribute.create(tempAttribute);
+    position++;
+  }
+
+  res.status(201).json();
+});
+
+// GET /api/project/:projectId/category (testing)
+exports.getCategories = catchAsync(async (req, res, next) => {
+  await checkCollab(
+    next,
+    req.params.projectId,
+    req.user.id,
+    "You do not have permission to create a new category.",
+    "can_edit",
+    "owner",
+    "can_view"
   );
+
+  if (!isValidObjectId(req.params.projectId))
+    return next(new AppError("Invalid projectId", 400));
+
+  const testProject = await Project.findById(req.params.projectId);
+  if (!testProject) return next(new AppError("Project not found", 404));
+
+  const categories = await Category.aggregate([
+    {
+      $match: {
+        projectId: new mongoose.Types.ObjectId(req.params.projectId),
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        name: 1,
+      },
+    },
+  ]);
+
   res.status(200).json({
     status: "success",
     data: categories,
   });
 });
 
-exports.getCategoryInfo = catchAsync(async (req, res, next) => {
-  if (!isValidObjectId(req.params.categoryId))
+// GET /api/category/:categoryId (testing)
+exports.getCategoryEntry = catchAsync(async (req, res, next) => {
+  await checkCollab(
+    next,
+    req.params.projectId,
+    req.user.id,
+    "You do not have permission to create a new category.",
+    "can_edit",
+    "owner",
+    "can_view"
+  );
+
+  if (isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
 
   const testCategory = await Category.findById(req.params.categoryId);
   if (!testCategory) return next(new AppError("Category not found", 404));
+
+  // Get category metadata
 
   const formatOutput = {
     name: testCategory.name,
-    description: testCategory.description ? testCategory.description : "",
-    mainAttribute: testCategory.mainAttribute,
+    description: testCategory.description,
   };
-  const entryDefinitions = [];
-  entryDefinitions.push({
-    id: 1,
-    accessorKey: testCategory.mainAttribute,
-    type: "string",
-  });
-  let id = 2;
-  for (const attribute of testCategory.otherAttributes) {
-    let tempDefinition = {
-      id,
-      accessorKey: attribute.name,
-      type: attribute.type,
-    };
-    if (attribute.type === "category_reference") {
-      const refCategory = await Category.findById(attribute.parentCategoryId);
-      if (!refCategory)
-        return next(new AppError("Reference category not found", 404));
-      tempDefinition["category"] = {
-        id: refCategory._id,
-        name: refCategory.name,
-      };
-    }
-    entryDefinitions.push(tempDefinition);
-    id++;
-  }
-  formatOutput.entryDefinitions = entryDefinitions;
 
-  const attributeEntries = [];
-  const testEntry = await CategoryData.find(
+  const otherAttribute = await Attribute.aggregate([
     {
-      categoryId: req.params.categoryId,
+      $match: {
+        categoryId: new mongoose.Types.ObjectId(req.params.categoryId),
+      },
     },
     {
-      categoryId: 0,
-      createdAt: 0,
-      createdBy: 0,
-      editedAt: 0,
-      editedBy: 0,
-      __v: 0,
-    }
-  );
+      $sort: {
+        position: 1,
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        accessorKey: "$name",
+        type: 1,
+      },
+    },
+  ]);
 
-  const allAttribute = entryDefinitions.map((obj) => obj.accessorKey);
-  allAttribute.push(testCategory.mainAttribute);
-  let id2 = 1;
-  for (const entry of testEntry) {
-    const formatEntry = {};
-    for (const attribute of Object.keys(entry)) {
-      if (allAttribute.includes(attribute)) {
-        if (
-          attribute !== testCategory.mainAttribute &&
-          testCategory.otherAttributes.filter((obj) => {
-            return attribute === obj.name;
-          })[0].type === "category_reference"
-        ) {
-          const testCategoryData = await CategoryData.findById(
-            entry[`${attribute}`]
-          );
-          if (!testCategory)
-            return next(new AppError("CategoryData not found", 404));
-          const testCategory2 = await Category.findById(
-            testCategoryData.categoryId
-          );
-          if (!testCategory2)
-            return next(new AppError("Category not found", 404));
+  const mainAttribute = otherAttribute.shift();
 
-          entry[`${attribute}`] = {
-            id: testCategoryData._id,
-            name: testCategoryData[`${testCategory2.mainAttribute}`],
-          };
-        }
-        formatEntry[`${attribute}`] = entry[`${attribute}`];
+  formatOutput["mainAttribute"] = mainAttribute.name;
+  formatOutput["entryDefinitions"] = otherAttribute;
+
+  // Get category entry
+
+  const entries = await CategoryEntity.find({
+    categoryId: req.params.categoryId,
+  });
+
+  const attributeEntries = [];
+  // ค่อย optimize
+  // Loop each entry row
+  for (const entry of entries) {
+    const formatEntry = { id: entry._id };
+    const attributeValues = await AttributeValue.find({
+      categoryEntityId: entry._id,
+    });
+    // Loop each data in each row
+    for (const attributeValue of attributeValues) {
+      const attribute = await Attribute.findById(attributeValue.attributeId);
+      if (!attribute) return next(new AppError("Attribute not found", 404));
+      if (attribute.type === "category_reference") {
+        if (!isValidObjectId(attributeValue.value))
+          return next(new AppError("Invalid something", 400));
+
+        const testParentEntry = await CategoryEntity.findById(
+          attributeValue.value
+        );
+        if (!testParentEntry)
+          return next(new AppError("Parent Data not found", 404));
+
+        const testmainAttributeParent = await Attribute.findOne({
+          position: 0,
+          categoryId: testParentEntry.categoryId,
+        });
+        if (!testmainAttributeParent)
+          return next(new AppError("Main Attribute of parent not found", 404));
+
+        const testAttributeValue = await AttributeValue.findOne({
+          attributeId: testmainAttributeParent,
+          categoryEntityId: testParentEntry._id,
+        });
+        if (!testAttributeValue)
+          return next(
+            new AppError("Main Attribute data of parent not found", 404)
+          );
+        formatEntry[`${attribute.name}`] = {
+          id: testEntry.categoryId,
+          name: testAttributeValue.value,
+        };
+      } else {
+        formatEntry[`${attribute.name}`] = attributeValue.value;
       }
     }
-    id2++;
-    formatEntry.id = id2;
     attributeEntries.push(formatEntry);
   }
-  formatOutput.attributeEntries = attributeEntries;
+  formatOutput["attributeEntries"] = attributeEntries;
+
   res.status(200).json({
     status: "success",
     data: formatOutput,
   });
 });
 
-exports.createCategory = catchAsync(async (req, res, next) => {
-  if (!isValidObjectId(req.params.projectId))
-    return next(new AppError("Invalid projectId", 400));
+// POST /api/category/:categoryId/entry (testing)
+exports.createEntry = catchAsync(async (req, res, next) => {
+  await checkCollab(
+    next,
+    req.params.projectId,
+    req.user.id,
+    "You do not have permission to create a new category.",
+    "can_edit",
+    "owner"
+  );
 
-  const testProject = await Project.findById(req.params.projectId);
-  if (!testProject) return next(new AppError("Project not found", 404));
-
-  const testCategoryName = await Category.findOne({ name: req.body.name });
-  if (testCategoryName) return next(new AppError("Duplicate category", 400));
-
-  // Check Input Format
-  if (!req.body.name || !req.body.mainAttribute)
-    return next(new AppError("Invalid input", 400));
-
-  let formatInput = {
-    projectId: req.params.projectId,
-    name: req.body.name,
-    description: req.body.description ? req.body.description : "",
-    mainAttribute: req.body.mainAttribute,
-    createdAt: Date.now(),
-    createdBy: req.user._id,
-    otherAttributes: [],
-  };
-
-  const otherAttributeNameCheck = [];
-
-  for (let i = 0; i < req.body.otherAttribute.length; ++i) {
-    const otherAttribute = req.body.otherAttribute[i];
-    if (!otherAttribute.name || !otherAttribute.type)
-      return next(new AppError("Invalid otherAttribute input", 400));
-
-    if (otherAttributeNameCheck.includes(otherAttribute.name))
-      return next(new AppError("Duplicate other attribute name", 400));
-
-    otherAttributeNameCheck.push(otherAttribute.name);
-    formatInput.otherAttributes[i] = {
-      name: otherAttribute.name,
-      type: otherAttribute.type,
-    };
-
-    if (otherAttribute.referenceFrom.length > 0) {
-      if (!isValidObjectId(otherAttribute.referenceFrom))
-        return next(new AppError("Invalid otherAttribute id", 400));
-      const testCategory = await Category.findById(
-        otherAttribute.referenceFrom
-      );
-      if (!testCategory)
-        return next(new AppError("Reference category not found"));
-
-      formatInput.otherAttributes[i]["parentCategoryId"] =
-        otherAttribute.referenceFrom;
-    }
-  }
-  const createdCategory = Category.create(formatInput);
-  res.status(201).json();
-});
-
-exports.getEntryByCategory = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
 
   const testCategory = await Category.findById(req.params.categoryId);
   if (!testCategory) return next(new AppError("Category not found", 404));
 
-  const categoryData = await CategoryData.find({
+  const attributes = await Attribute.find({
     categoryId: req.params.categoryId,
   });
 
-  const formatOutput = [];
-  for (const data of categoryData) {
-    formatOutput.push({
-      name: data[`${testCategory.mainAttribute}`],
-      id: data._id,
+  // Check input validity
+  for (const attribute of Object.keys(req.body)) {
+    if (!attributes.map((obj) => obj.name).includes(attribute))
+      return next(new AppError("Invalid input", 400));
+  }
+
+  // Create Category Entity
+  const createEntry = await CategoryEntity.create({
+    categoryId: req.params.categoryId,
+    createdAt: Date.now(),
+    createdBy: req.user.id,
+  });
+  let failed = false;
+  const createdAttributeValue = [];
+  let reason = "";
+  let errCode = 400;
+  // Create Attribute Value
+  for (const attribute of Object.keys(req.body)) {
+    const dataAttribute = await Attribute.findOne({
+      name: attribute,
+      categoryId: req.params.categoryId,
+    });
+    if (dataAttribute.type === "category_reference") {
+      if (!isValidObjectId(req.body[`${attribute}`])) {
+        failed = true;
+        reason = "Invalid parentId";
+        break;
+      }
+      const testEntry = await CategoryEntity.findById(req.body[`${attribute}`]);
+      if (!testEntry) {
+        failed = true;
+        reason = "Parent Reference not found";
+        errCode = 404;
+        break;
+      }
+    }
+    const attributeValue = await AttributeValue.create({
+      categoryEntityId: createEntry._id,
+      attributeId: dataAttribute._id,
+      value: req.body[`${attribute}`],
     });
   }
 
-  res.status(200).json({
-    status: "success",
-    data: formatOutput,
-  });
-});
-
-exports.addEntry = catchAsync(async (req, res, next) => {
-  if (!isValidObjectId(req.params.categoryId))
-    return next(new AppError("Invalid categoryId", 400));
-
-  const testCategory = await Category.findById(req.params.categoryId);
-  if (!testCategory) next(new AppError("Category not found", 404));
-
-  // Check main category
-  if (!Object.keys(req.body).includes(testCategory.mainAttribute))
-    return next(new AppError("Required mainAttribute", 400));
-
-  const allAttribute = testCategory.otherAttributes.map((obj) => obj.name);
-  allAttribute.push(testCategory.mainAttribute);
-
-  const formatInput = {
-    categoryId: req.params.categoryId,
-    createdAt: Date.now(),
-    createdBy: req.user._id,
-  };
-  // Check if otherCategory entry match with category attribute
-  for (const attribute of Object.keys(req.body)) {
-    if (!allAttribute.includes(attribute))
-      return next(new AppError("Invalid attributeNane", 400));
-
-    if (
-      attribute !== testCategory.mainAttribute &&
-      testCategory.otherAttributes.filter((obj) => {
-        return attribute === obj.name;
-      })[0].type === "category_reference"
-    ) {
-      const testCategoryData = await CategoryData.findById(
-        req.body[`${attribute}`]
-      );
-
-      if (!testCategoryData)
-        return next(new AppError("Reference Data not found", 404));
+  if (failed) {
+    for (const createdAttribute of createdAttributeValue) {
+      await AttributeValue.deleteOne({ _id: createdAttribute._id });
     }
-    formatInput[`${attribute}`] = req.body[`${attribute}`];
+    return next(new AppError(reason, errCode));
   }
 
-  const createdAttributeData = await CategoryData.create(formatInput);
-
   res.status(201).json();
+});
+
+// PUT /api/category/:categoryId
+exports.editCategory = catchAsync(async (req, res, next) => {
+  res.status(204).json();
+});
+
+// PUT /api/entry/:entryId
+exports.editEntry = catchAsync(async (req, res, next) => {
+  res.status(204).json();
+});
+
+// DELETE /api/category/:categoryId
+exports.deleteCategory = catchAsync(async (req, res, next) => {
+  res.status(204).json();
+});
+
+// DELETE /api/entry/:entryId
+exports.deleteEntry = catchAsync(async (req, res, next) => {
+  res.status(204).json();
 });
