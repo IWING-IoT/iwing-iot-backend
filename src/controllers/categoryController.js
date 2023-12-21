@@ -201,8 +201,7 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
   ]);
 
   const mainAttribute = otherAttribute.shift();
-
-  formatOutput["mainAttribute"] = mainAttribute.name;
+  formatOutput["mainAttribute"] = mainAttribute.accessorKey;
   formatOutput["entryDefinitions"] = otherAttribute;
 
   // Get category entry
