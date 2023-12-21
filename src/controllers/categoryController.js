@@ -60,7 +60,7 @@ exports.createCategory = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid input", 400));
 
   const testCategory = await Category.findOne({ name: req.body.name });
-  if (!testCategory) return next(new AppError("Duplicate category name", 400));
+  if (testCategory) return next(new AppError("Duplicate category name", 400));
 
   // Create category
   const createCategory = await Category.create({

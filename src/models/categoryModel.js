@@ -9,6 +9,7 @@ const categorySchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, "Category must has a name"],
+    max: 100,
   },
   description: {
     type: String,
