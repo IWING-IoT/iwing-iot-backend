@@ -8,7 +8,7 @@ const router = express.Router();
 router.get(
   "/:categoryId",
   authController.protect,
-  categoryController.getCategories
+  categoryController.getCategoryEntry
 );
 
 router.post(

@@ -128,8 +128,8 @@ exports.getCategories = catchAsync(async (req, res, next) => {
     "can_view"
   );
 
-  if (!isValidObjectId(req.params.projectId))
-    return next(new AppError("Invalid projectId", 400));
+  if (!isValidObjectId(req.params.categoryId))
+    return next(new AppError("Invalid categoryId", 400));
 
   const testProject = await Project.findById(req.params.projectId);
   if (!testProject) return next(new AppError("Project not found", 404));
