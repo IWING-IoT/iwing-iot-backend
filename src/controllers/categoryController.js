@@ -267,20 +267,20 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
 
 // POST /api/category/:categoryId/entry (testing)
 exports.createEntry = catchAsync(async (req, res, next) => {
-  await checkCollab(
-    next,
-    req.params.projectId,
-    req.user.id,
-    "You do not have permission to create a new category.",
-    "can_edit",
-    "owner"
-  );
-
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
 
   const testCategory = await Category.findById(req.params.categoryId);
   if (!testCategory) return next(new AppError("Category not found", 404));
+
+  await checkCollab(
+    next,
+    testCategory.projectId,
+    req.user.id,
+    "You do not have permission to create a new category.",
+    "can_edit",
+    "owner"
+  );
 
   const attributes = await Attribute.find({
     categoryId: req.params.categoryId,
