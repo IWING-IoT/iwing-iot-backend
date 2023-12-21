@@ -354,6 +354,46 @@ exports.createEntry = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
+// GET /api/category/:categoryId/entry
+exports.getCategoryMainAttribute = catchAsync(async (req, res, next) => {
+  console.log(req.params.categoryId);
+  if (!isValidObjectId(req.params.categoryId))
+    return next(new AppError("Invalid categoryId", 400));
+
+  const testCategory = await Category.findById(req.params.categoryId);
+  if (!testCategory) return next(new AppError("Category not found", 404));
+
+  const categoryEntites = await CategoryEntity.find({
+    categoryId: req.params.categoryId,
+  });
+
+  const attribute = await Attribute.findOne({
+    categoryId: req.params.categoryId,
+    position: 0,
+  });
+
+  const attributeValues = await AttributeValue.aggregate([
+    {
+      $match: {
+        attributeId: attribute._id,
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        id: "$categoryEntityId",
+        name: "$value",
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    status: "success",
+    data: attributeValues,
+  });
+});
+
 // PUT /api/category/:categoryId
 exports.editCategory = catchAsync(async (req, res, next) => {
   res.status(204).json();

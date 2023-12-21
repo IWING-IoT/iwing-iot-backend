@@ -29,4 +29,10 @@ router.delete(
   categoryController.deleteCategory
 );
 
+router.get(
+  "/:categoryId/entry",
+  authController.protect,
+  categoryController.getCategoryMainAttribute
+);
+
 module.exports = router;
