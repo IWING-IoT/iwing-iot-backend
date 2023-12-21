@@ -18,6 +18,6 @@ const categoryEntitySchema = new mongoose.Schema({
   },
 });
 
-const CategoryEntity = mongoose.Schema("CategoryEntity", categoryEntitySchema);
+const CategoryEntity = mongoose.model("CategoryEntity", categoryEntitySchema);
 
 module.exports = CategoryEntity;

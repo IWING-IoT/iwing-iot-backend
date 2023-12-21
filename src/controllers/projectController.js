@@ -6,7 +6,6 @@ const Project = require("./../models/projectModel");
 const Template = require("./../models/templateModel");
 const Permission = require("./../models/permissionModel");
 const Collaborator = require("./../models/collaboratorModel");
-const Location = require("./../models/locationModel");
 const Phase = require("./../models/phaseModel");
 
 const AppError = require("../utils/appError");

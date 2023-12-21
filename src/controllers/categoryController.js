@@ -6,7 +6,6 @@ const checkCollab = require("../utils/checkCollab");
 const Project = require("../models/projectModel");
 const User = require("../models/userModel");
 
-const CategoryData = require("../models/categoryDataModel");
 const Category = require("../models/categoryModel");
 const Collaborator = require("../models/collaboratorModel");
 const Permission = require("../models/permissionModel");
