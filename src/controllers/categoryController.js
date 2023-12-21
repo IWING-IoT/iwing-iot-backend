@@ -263,7 +263,7 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
             new AppError("Main Attribute data of parent not found", 404)
           );
         formatEntry[`${attribute.name}`] = {
-          id: testEntry.categoryId,
+          id: testParentEntry.categoryId,
           name: testAttributeValue.value,
         };
       } else {
