@@ -12,6 +12,7 @@ const Permission = require("../models/permissionModel");
 const Attribute = require("../models/attributeModel");
 const AttributeValue = require("../models/attributeValueModel");
 const CategoryEntity = require("../models/categoryEntityModel");
+const { format } = require("morgan");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -196,12 +197,26 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
         _id: 0,
         accessorKey: "$name",
         type: 1,
+        parentCategoryId: 1,
       },
     },
   ]);
 
   const mainAttribute = otherAttribute.shift();
   formatOutput["mainAttribute"] = mainAttribute.accessorKey;
+
+  for (let i = 0; i < otherAttribute.length; ++i) {
+    if (otherAttribute[i].type === "category_reference") {
+      otherAttribute[i]["category"] = {};
+      otherAttribute[i]["category"]["id"] = otherAttribute[i].parentCategoryId;
+
+      const testParentCategory = await Category.findById(
+        otherAttribute[i]["parentCategoryId"]
+      );
+      otherAttribute[i]["category"]["name"] = testParentCategory.name;
+      delete otherAttribute[i].parentCategoryId;
+    }
+  }
   formatOutput["entryDefinitions"] = otherAttribute;
 
   // Get category entry
