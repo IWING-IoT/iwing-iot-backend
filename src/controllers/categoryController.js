@@ -233,9 +233,11 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
     const attributeValues = await AttributeValue.find({
       categoryEntityId: entry._id,
     });
+    console.log(`Attributes of entry = ${attributeValues}`);
     // Loop each data in each row
     for (const attributeValue of attributeValues) {
       const attribute = await Attribute.findById(attributeValue.attributeId);
+      console.log(attributeValue.attributeId);
       if (!attribute) return next(new AppError("Attribute not found", 404));
       if (attribute.type === "category_reference") {
         if (!isValidObjectId(attributeValue.value))
@@ -458,6 +460,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   let position = 1;
   for (const newAttribute of req.body.otherAttribute) {
     if (newAttribute.id) {
+      console.log(`Old attribute = ${newAttribute.name}`);
       const updatedDoc = {};
       // edit attribute เก่า
       const oldAttribute = await Attribute.findById(newAttribute.id);
@@ -493,6 +496,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
       );
     } else {
       // create new attribute
+
       let tempAttribute = {
         categoryId: req.params.categoryId,
         position,
