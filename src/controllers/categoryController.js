@@ -494,7 +494,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
     } else {
       // create new attribute
       let tempAttribute = {
-        categoryId: createCategory._id,
+        categoryId: req.params.categoryId,
         position,
         createdAt: Date.now(),
         createdBy: req.user.id,
@@ -563,12 +563,8 @@ exports.editEntry = catchAsync(async (req, res, next) => {
     },
   ]);
 
-
-  for(const changeAttribute of req.body){
-    
+  for (const changeAttribute of req.body) {
   }
-
-  
 
   res.status(204).json();
 });
