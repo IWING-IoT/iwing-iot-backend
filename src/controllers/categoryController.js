@@ -575,10 +575,38 @@ exports.editEntry = catchAsync(async (req, res, next) => {
 
 // DELETE /api/category/:categoryId
 exports.deleteCategory = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.categoryId))
+    return next(new AppError("Invalid categoryId", 400));
+
+  const testCategory = await Category.findById(req.params.categoryId);
+  if (!testCategory) return next(new AppError("Category not found", 404));
+
+  // การลบ category
+  // AttributeValue
+  const entries = await CategoryEntity.find({
+    categoryId: req.params.categoryId,
+  });
+
+  for (const entry of entries) {
+    await AttributeValue.deleteMany({ categoryEntityId: entry._id });
+    await CategoryEntity.deleteOne({ _id: entry._id });
+  }
+
+  await Attribute.deleteMany({ categoryId: req.params.categoryId });
+  await Category.deleteOne({ _id: req.params.categoryId });
+
   res.status(204).json();
 });
 
 // DELETE /api/entry/:entryId
 exports.deleteEntry = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.entryId))
+    return next(new AppError("Invalid entryId", 400));
+
+  const testEntry = await CategoryEntity.findById(req.params.entryId);
+  if (!testEntry) return next(new AppError("Entry not found", 404));
+
+  await AttributeValue.deleteMany({ categoryEntityId: testEntry._id });
+  await CategoryEntity.deleteOne({ _id: req.params.entryId });
   res.status(204).json();
 });
