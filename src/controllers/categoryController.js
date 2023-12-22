@@ -363,6 +363,16 @@ exports.getCategoryMainAttribute = catchAsync(async (req, res, next) => {
   const testCategory = await Category.findById(req.params.categoryId);
   if (!testCategory) return next(new AppError("Category not found", 404));
 
+  await checkCollab(
+    next,
+    testCategory.projectId,
+    req.user.id,
+    "You do not have permission to create a new category.",
+    "can_edit",
+    "owner",
+    "can_view"
+  );
+
   const categoryEntites = await CategoryEntity.find({
     categoryId: req.params.categoryId,
   });
@@ -396,11 +406,170 @@ exports.getCategoryMainAttribute = catchAsync(async (req, res, next) => {
 
 // PUT /api/category/:categoryId
 exports.editCategory = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.categoryId))
+    return next(new AppError("Invalid categoryId", 400));
+
+  const testCategory = await Category.findById(req.params.categoryId);
+  if (!testCategory) return next(new AppError("Category not found", 404));
+
+  await checkCollab(
+    next,
+    testCategory.projectId,
+    req.user.id,
+    "You do not have permission to create a new category.",
+    "can_edit",
+    "owner"
+  );
+
+  // Change metadata and mainAttribute
+  const updatedCategory = await Category.findOneAndUpdate(
+    { categoryId: req.params.categoryId },
+    {
+      name: req.body.name,
+      description: req.body.description,
+      editedAt: Date.now(),
+      editedBy: req.user.id,
+    }
+  );
+
+  const mainAttribute = await Attribute.findOneAndUpdate(
+    {
+      categoryId: req.params.categoryId,
+      position: 0,
+    },
+    {
+      name: req.body.mainAttribute,
+      editedAt: Date.now(),
+      editedBy: req.user.id,
+    }
+  );
+
+  /* // เงื่อนไขมหาศาล
+    1. ถ้าลบ attribute นั้นออกจะต้องลบ AttributeValue ของ column นั้นทั้งหมด
+    2. ถ้ามีการเปลี่ยน parentCategory จะต้องล้างข้อมูล attributeValue ของ column นั้นทั้งหมด
+  */
+
+  const oldAttributes = await Attribute.find({
+    categoryId: req.params.categoryId,
+  }).sort({ position: 1 });
+
+  oldAttributes.shift();
+
+  let position = 1;
+  for (const newAttribute of req.body.otherAttribute) {
+    if (newAttribute.id) {
+      const updatedDoc = {};
+      // edit attribute เก่า
+      const oldAttribute = await Attribute.findById(newAttribute.id);
+      if (!oldAttribute) return next(new AppError("Attribute not found", 404));
+      if (
+        oldAttribute.type !== newAttribute.type ||
+        !compareId(oldAttribute.parentCategoryId, newAttribute.referenceFrom)
+      ) {
+        // ถ้ามีการเปลี่ยน data type หรือถ้า parentReference เปลี่ยน ต้องลบ attributeValue ทั้งหมด
+        await AttributeValue.deleteMany({ attributeId: oldAttribute._id });
+      }
+      // update attribute metadata
+
+      const updatedAttribute = await Attribute.findOneAndUpdate(
+        {
+          _id: newAttribute.id,
+        },
+        {
+          name: newAttribute.name,
+          type: newAttribute.type,
+          parentCategoryId:
+            newAttribute.type === "category_reference"
+              ? newAttribute.referenceFrom
+              : null,
+          position,
+          editedAt: Date.now(),
+          editedBy: req.user.id,
+        }
+      );
+
+      oldAttributes = oldAttributes.filter(
+        (attribute) => !compareId(attribute._id, updatedAttribute._id)
+      );
+    } else {
+      // create new attribute
+      let tempAttribute = {
+        categoryId: createCategory._id,
+        position,
+        createdAt: Date.now(),
+        createdBy: req.user.id,
+      };
+
+      if (!newAttribute.name || !newAttribute.type)
+        return next(new AppError("Invalid input", 400));
+      tempAttribute["name"] = newAttribute.name;
+      tempAttribute["type"] = newAttribute.type;
+
+      if (newAttribute.type === "category_reference") {
+        if (!isValidObjectId(newAttribute.referenceFrom))
+          return next(new AppError("Invalid parentId", 400));
+
+        const testParentCategory = await Category.findById(
+          newAttribute.referenceFrom
+        );
+        if (!testParentCategory)
+          return next(new AppError("Parent Categroy not found", 404));
+
+        tempAttribute["parentCategoryId"] = newAttribute.referenceFrom;
+      }
+      const createAttribute = await Attribute.create(tempAttribute);
+    }
+    position++;
+  }
+
+  // Removed Attribute
+  for (const removedAttribute of oldAttributes) {
+    await Attribute.deleteOne({ _id: removedAttribute._id });
+    // Remove all of attributeValue
+    await Attribute.deleteMany({ attributeId: removedAttribute._id });
+  }
   res.status(204).json();
 });
 
 // PUT /api/entry/:entryId
 exports.editEntry = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.entryId))
+    return next(new AppError("Invalid entryId", 400));
+
+  const testEntry = await CategoryEntity.findById(req.params.entryId);
+  if (!testEntry) return next(new AppError("Entry not found", 404));
+
+  const attributes = await AttributeValue.aggregate([
+    {
+      $match: {
+        categoryEntityId: new mongoose.Schema.ObjectId(testEntry),
+      },
+    },
+    {
+      $lookup: {
+        from: "attributes",
+        localField: "$attributeId",
+        foreignField: "$_id",
+        as: "attribute",
+      },
+    },
+    {
+      $unwind: "$attribute",
+    },
+    {
+      $sort: {
+        "$attribute.position": 1,
+      },
+    },
+  ]);
+
+
+  for(const changeAttribute of req.body){
+    
+  }
+
+  
+
   res.status(204).json();
 });
 
