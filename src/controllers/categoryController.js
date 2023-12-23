@@ -25,7 +25,9 @@ const isValidObjectId = (id) => {
 };
 
 const compareId = (id1, id2) => {
-  return id1.toString() === id2.toString();
+  if (id1 && id2) {
+    return id1.toString() === id2.toString();
+  } else return false;
 };
 
 /**
@@ -233,11 +235,9 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
     const attributeValues = await AttributeValue.find({
       categoryEntityId: entry._id,
     });
-    console.log(`Attributes of entry = ${attributeValues}`);
     // Loop each data in each row
     for (const attributeValue of attributeValues) {
       const attribute = await Attribute.findById(attributeValue.attributeId);
-      console.log(attributeValue.attributeId);
       if (!attribute) return next(new AppError("Attribute not found", 404));
       if (attribute.type === "category_reference") {
         if (!isValidObjectId(attributeValue.value))
@@ -358,7 +358,6 @@ exports.createEntry = catchAsync(async (req, res, next) => {
 
 // GET /api/category/:categoryId/entry
 exports.getCategoryMainAttribute = catchAsync(async (req, res, next) => {
-  console.log(req.params.categoryId);
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
 
@@ -424,8 +423,9 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   );
 
   // Change metadata and mainAttribute
+
   const updatedCategory = await Category.findOneAndUpdate(
-    { categoryId: req.params.categoryId },
+    { _id: req.params.categoryId },
     {
       name: req.body.name,
       description: req.body.description,
@@ -451,7 +451,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
     2. ถ้ามีการเปลี่ยน parentCategory จะต้องล้างข้อมูล attributeValue ของ column นั้นทั้งหมด
   */
 
-  const oldAttributes = await Attribute.find({
+  let oldAttributes = await Attribute.find({
     categoryId: req.params.categoryId,
   }).sort({ position: 1 });
 
@@ -460,20 +460,24 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   let position = 1;
   for (const newAttribute of req.body.otherAttribute) {
     if (newAttribute.id) {
-      console.log(`Old attribute = ${newAttribute.name}`);
       const updatedDoc = {};
       // edit attribute เก่า
+
       const oldAttribute = await Attribute.findById(newAttribute.id);
       if (!oldAttribute) return next(new AppError("Attribute not found", 404));
+
       if (
         oldAttribute.type !== newAttribute.type ||
-        !compareId(oldAttribute.parentCategoryId, newAttribute.referenceFrom)
+        (newAttribute.referenceFrom !== "" &&
+          !compareId(
+            oldAttribute.parentCategoryId ? oldAttribute.parentCategoryId : "",
+            newAttribute.referenceFrom
+          ))
       ) {
         // ถ้ามีการเปลี่ยน data type หรือถ้า parentReference เปลี่ยน ต้องลบ attributeValue ทั้งหมด
         await AttributeValue.deleteMany({ attributeId: oldAttribute._id });
       }
       // update attribute metadata
-
       const updatedAttribute = await Attribute.findOneAndUpdate(
         {
           _id: newAttribute.id,
@@ -530,7 +534,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   for (const removedAttribute of oldAttributes) {
     await Attribute.deleteOne({ _id: removedAttribute._id });
     // Remove all of attributeValue
-    await Attribute.deleteMany({ attributeId: removedAttribute._id });
+    await AttributeValue.deleteMany({ attributeId: removedAttribute._id });
   }
   res.status(204).json();
 });
