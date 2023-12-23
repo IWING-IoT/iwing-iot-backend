@@ -547,31 +547,76 @@ exports.editEntry = catchAsync(async (req, res, next) => {
   const testEntry = await CategoryEntity.findById(req.params.entryId);
   if (!testEntry) return next(new AppError("Entry not found", 404));
 
-  const attributes = await AttributeValue.aggregate([
+  const attributes = await Attribute.aggregate([
     {
       $match: {
-        categoryEntityId: new mongoose.Schema.ObjectId(testEntry),
+        categoryId: new mongoose.Types.ObjectId(testEntry.categoryId),
       },
     },
-    {
-      $lookup: {
-        from: "attributes",
-        localField: "$attributeId",
-        foreignField: "$_id",
-        as: "attribute",
-      },
-    },
-    {
-      $unwind: "$attribute",
-    },
+    // {
+    //   $lookup: {
+    //     from: "attributes",
+    //     localField: "attributeId",
+    //     foreignField: "_id",
+    //     as: "attribute",
+    //   },
+    // },
+    // {
+    //   $unwind: "$attribute",
+    // },
     {
       $sort: {
-        "$attribute.position": 1,
+        position: 1,
       },
     },
   ]);
 
-  for (const changeAttribute of req.body) {
+  for (const attribute of attributes) {
+    if (attribute.position === 0) {
+      // mainAttribute
+      const mainAttribute = req.body.filter((obj) => !obj.id);
+      console.log("enter mainAttribute");
+      if (mainAttribute.length === 0)
+        return next(new AppError("Invalid input", 400));
+      const updatedAttributeValue = await AttributeValue.findOneAndUpdate(
+        {
+          categoryEntityId: req.params.entryId,
+          attributeId: attribute._id,
+        },
+        {
+          value: mainAttribute[0].value,
+        }
+      );
+    } else {
+      // otherAttribute
+      const testAttributeValue = await AttributeValue.findOne({
+        categoryEntityId: req.params.entryId,
+        attributeId: attribute._id,
+      });
+      if (!testAttributeValue) {
+        const createdAttributeValue = await AttributeValue.create({
+          categoryEntityId: req.params.entryId,
+          attributeId: attribute._id,
+          value: req.body.filter((obj) => compareId(obj.id, attribute._id))[0]
+            .value,
+          createdAt: Date.now(),
+          createdBy: req.user.id,
+        });
+      } else {
+        const updatedAttributeValue = await AttributeValue.findOneAndUpdate(
+          {
+            categoryEntityId: req.params.entryId,
+            attributeId: attribute._id,
+          },
+          {
+            value: req.body.filter((obj) => compareId(obj.id, attribute._id))[0]
+              .value,
+            editedAt: Date.now(),
+            editedBy: req.user.id,
+          }
+        );
+      }
+    }
   }
 
   res.status(204).json();
