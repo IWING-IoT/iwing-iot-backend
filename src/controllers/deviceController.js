@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const catchAsync = require("../utils/catchAsync");
+const checkCollab = require("./../utils/checkCollab");
 
 const Device = require("../models/deviceModel");
 const AppError = require("../utils/appError");
@@ -48,4 +49,50 @@ exports.createDevice = catchAsync(async (req, res, next) => {
 });
 
 // GET /api/device
-exports.getDevices = catchAsync(async (req, res, next) => ({}));
+exports.getDevices = catchAsync(async (req, res, next) => {
+  // Query project that matching requirement
+  if (!req.query.type || req.query.status)
+    return next(new AppError("Required query", 400));
+  const match = {
+    isDeleted: false,
+    type: req.query.type,
+    status: req.query.status,
+  };
+
+  const devices = await Device.aggregate([
+    {
+      $match: match,
+    },
+    {
+      $project: {
+        name: 1,
+        id: "_$id",
+        type: 1,
+        stauts: 1,
+      },
+    },
+  ]);
+
+  for (const device of devices) {
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: devices,
+  });
+});
+
+// PATCH /api/device/:deviceId/disable
+exports.disableDevice = catchAsync(async (req, res, next) => {
+  res.status(204).json();
+});
+
+// PATCH /api/device/:deviceId
+exports.editDevice = catchAsync(async (req, res, next) => {
+  res.status(204).json();
+});
+
+// DELETE /api/device/:deviceId
+exports.deleteDevice = catchAsync(async (req, res, next) => {
+  res.status(204).json();
+});

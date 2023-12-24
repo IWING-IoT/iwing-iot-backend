@@ -9,6 +9,7 @@ const Phase = require("./../models/phaseModel");
 const Permission = require("./../models/permissionModel");
 const Project = require("./../models/projectModel");
 const User = require("./../models/userModel");
+const PhaseApi = require("../models/phaseApiModel");
 /**
  * @desc check wheather input id is valid mongodb objectID
  * @param {String} id that want to check
@@ -58,6 +59,32 @@ exports.createPhase = catchAsync(async (req, res, next) => {
     createdBy: req.user._id,
     editedAt: Date.now(),
     editedBy: req.user._id,
+  });
+
+  // Create default phaseApi (lattitude, longitude, temperature, battery)
+
+  const lattitudeApi = await PhaseApi.create({
+    phaseId: newPhase._id,
+    name: "Lattitude",
+    type: "Number",
+  });
+
+  const longitudeApi = await PhaseApi.create({
+    phaseId: newPhase._id,
+    name: "Longitude",
+    type: "Number",
+  });
+
+  const temperatureApi = await PhaseApi.create({
+    phaseId: newPhase._id,
+    name: "Temperature",
+    type: "Number",
+  });
+
+  const batteryApi = await PhaseApi.create({
+    phaseId: newPhase._id,
+    name: "Battery",
+    type: "Number",
   });
 
   res.status(201).json();

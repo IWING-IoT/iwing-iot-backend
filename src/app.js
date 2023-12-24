@@ -18,6 +18,7 @@ const categoryRouter = require("./routes/categoryRoutes");
 const phaseApiRouter = require("./routes/phaseApiRoutes");
 const testRouter = require("./routes/testRoutes");
 const entryRouter = require("./routes/entryRoutes");
+const deviceRouter = require("./routes/deviceRoutes");
 const app = express();
 
 app.use(bodyParser.json());
@@ -35,6 +36,7 @@ app.use("/api/collaborator", collaboratorRouter);
 app.use("/api/phase", phaseRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api/phaseApi", phaseApiRouter);
+app.use("/api/device", deviceRouter);
 app.use("/api/test", testRouter);
 app.use("/api/entry", entryRouter);
 

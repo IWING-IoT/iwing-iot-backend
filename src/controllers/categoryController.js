@@ -42,7 +42,7 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
-// POST /api/project/:projectId/category (testing)
+// POST /api/project/:projectId/category (finished)
 exports.createCategory = catchAsync(async (req, res, next) => {
   await checkCollab(
     next,
@@ -119,7 +119,7 @@ exports.createCategory = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
-// GET /api/project/:projectId/category (testing)
+// GET /api/project/:projectId/category (finished)
 exports.getCategories = catchAsync(async (req, res, next) => {
   await checkCollab(
     next,
@@ -158,7 +158,7 @@ exports.getCategories = catchAsync(async (req, res, next) => {
   });
 });
 
-// GET /api/category/:categoryId (testing)
+// GET /api/category/:categoryId (finished)
 exports.getCategoryEntry = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
@@ -282,7 +282,7 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
   });
 });
 
-// POST /api/category/:categoryId/entry (testing)
+// POST /api/category/:categoryId/entry (finished)
 exports.createEntry = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
@@ -356,7 +356,7 @@ exports.createEntry = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
-// GET /api/category/:categoryId/entry
+// GET /api/category/:categoryId/entry (finished)
 exports.getCategoryMainAttribute = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
@@ -405,7 +405,7 @@ exports.getCategoryMainAttribute = catchAsync(async (req, res, next) => {
   });
 });
 
-// PUT /api/category/:categoryId
+// PUT /api/category/:categoryId (finished)
 exports.editCategory = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
@@ -539,7 +539,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// PUT /api/entry/:entryId
+// PUT /api/entry/:entryId (finished)
 exports.editEntry = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.entryId))
     return next(new AppError("Invalid entryId", 400));
