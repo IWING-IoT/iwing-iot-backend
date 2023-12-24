@@ -66,25 +66,25 @@ exports.createPhase = catchAsync(async (req, res, next) => {
   const lattitudeApi = await PhaseApi.create({
     phaseId: newPhase._id,
     name: "Lattitude",
-    type: "Number",
+    dataType: "Number",
   });
 
   const longitudeApi = await PhaseApi.create({
     phaseId: newPhase._id,
     name: "Longitude",
-    type: "Number",
+    dataType: "Number",
   });
 
   const temperatureApi = await PhaseApi.create({
     phaseId: newPhase._id,
     name: "Temperature",
-    type: "Number",
+    dataType: "Number",
   });
 
   const batteryApi = await PhaseApi.create({
     phaseId: newPhase._id,
     name: "Battery",
-    type: "Number",
+    dataType: "Number",
   });
 
   res.status(201).json();
