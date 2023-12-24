@@ -9,7 +9,7 @@ const phaseSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, "Phase must has a name"],
-    maxlength: 100,
+    maxlength: 1000,
   },
   isActive: {
     type: Boolean,
