@@ -562,7 +562,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
 
 // PUT /api/entry/:entryId (testing)
 exports.editEntry = catchAsync(async (req, res, next) => {
-  if (!isValidObjectId(req.parmas.entryId))
+  if (!isValidObjectId(req.params.entryId))
     return next(new AppError("Invalid entryId"));
 
   const testEntry = await CategoryEntity.findById(req.params.entryId);
