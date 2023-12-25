@@ -23,6 +23,7 @@ const compareId = (id1, id2) => {
   return id1.toString() === id2.toString();
 };
 
+// POST /api/phase/:phaseId/phaseApi (testing)
 exports.createApi = catchAsync(async (req, res, next) => {
   const phaseId = req.params.phaseId;
   if (!req.body.dataType || !req.body.name || !isValidObjectId(phaseId))
@@ -52,7 +53,6 @@ exports.createApi = catchAsync(async (req, res, next) => {
     "owner"
   );
 
-  
   const newApi = await PhaseApi.create({
     phaseId,
     ...req.body,
@@ -61,6 +61,7 @@ exports.createApi = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
+// GET /api/phase/:phaseId/phaseApi (testing)
 exports.getApi = catchAsync(async (req, res, next) => {
   const phaseId = req.params.phaseId;
 
@@ -105,6 +106,7 @@ exports.getApi = catchAsync(async (req, res, next) => {
   });
 });
 
+// PATCH /api/phaseApi/:phaseApiId (testing)
 exports.edited = catchAsync(async (req, res, next) => {
   const phaseApiId = req.params.phaseApiId;
 
@@ -159,6 +161,7 @@ exports.edited = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
+// DELETE /api/phaseApi/:phaseApi (testing)
 exports.deleted = catchAsync(async (req, res, next) => {
   const phaseApiId = req.params.phaseApiId;
 
@@ -190,4 +193,67 @@ exports.deleted = catchAsync(async (req, res, next) => {
 
   await PhaseApi.deleteOne({ _id: phaseApiId });
   res.status(204).json();
+});
+
+// GET /api/phase/:phaseId/phaseApi/example (testing)
+exports.example = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.phaseId))
+    return next(new AppError("Invalid phaseId", 400));
+
+  const testPhase = await Phase.findById(req.params.phaseId);
+  if (!testPhase) return next(new AppError("Phase not found", 404));
+
+  const formatOutput = {
+    gateway: { aliasName: "alias name of device" },
+    default: {},
+  };
+
+  const apis = await PhaseApi.find({ phaseId: req.params.phaseId }).sort({
+    createdAt: 1,
+  });
+
+  for (const api of apis) {
+    formatOutput["gateway"][
+      `${api.name}`
+    ] = `enter ${api.name} with type ${api.type}`;
+
+    formatOutput["default"][
+      `${api.name}`
+    ] = `enter ${api.name} with type ${api.type}`;
+  }
+  res.status(200).json({
+    status: "success",
+    data: formatOutput,
+  });
+});
+
+// POST /api/phase/:phaseId/phaseApi/copy (testing)
+exports.copy = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.phaseId))
+    return next(new AppError("Invalid phaseId", 400));
+
+  const testPhase = await Phase.findById(req.params.phaseId);
+  if (!testPhase) return next(new AppError("Phase not found", 404));
+
+  const phases = await Phase.find({ projectId: testPhase.projectId }).sort({
+    createdAt: -1,
+  });
+
+  if (phases.length === 1)
+    return next(new AppError("There is no previous phase for copy", 400));
+
+  const previousApis = await PhaseApi.find({ phaseId: phases[1]._id }).sort({
+    createdAt: 1,
+  });
+  for (const previousApi of previousApis) {
+    const createdPhaseApi = await PhaseApi.create({
+      phaseId: req.params.phaseId,
+      description: previousApi.description ? previousApi.description : "",
+      name: previousApi.name,
+      dataType: previousApi.dataType,
+      createdAt: Date.now(),
+    });
+  }
+
+  res.status(201).json();
 });

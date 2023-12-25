@@ -20,6 +20,9 @@ const phaseApiSchema = new mongoose.Schema({
   description: {
     type: String,
   },
+  createdAt: {
+    type: Date,
+  },
 });
 
 const PhaseApi = mongoose.model("PhaseApi", phaseApiSchema);

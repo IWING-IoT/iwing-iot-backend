@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+const devicePhaseStatusEnum = ["active", "inactive", "archived"];
 const devicePhaseSchema = new mongoose.Schema({
   deviceId: {
     type: mongoose.Schema.ObjectId,
@@ -14,9 +15,30 @@ const devicePhaseSchema = new mongoose.Schema({
   alias: {
     type: String,
   },
+  status: {
+    type: String,
+    required: [true, "DevicePhase must has a status"],
+    enum: devicePhaseStatusEnum,
+  },
   categoryDataId: {
     type: [mongoose.Schema.ObjectId],
     ref: "CategoryData",
+  },
+  messageReceive: {
+    type: Number,
+    default: 0,
+  },
+  lastConnection: {
+    type: Date,
+  },
+  temperature: {
+    type: Number,
+  },
+  battery: {
+    type: Number,
+  },
+  jwt: {
+    type: String,
   },
   createdAt: Date,
   createdBy: {
@@ -29,11 +51,6 @@ const devicePhaseSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: "User",
   },
-  isDeleted: {
-    type: Boolean,
-    default: false,
-  },
-  deletedAt: Date,
 });
 
 const DevicePhase = mongoose.Schema("DevicePhase", devicePhaseSchema);

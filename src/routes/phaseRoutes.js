@@ -32,4 +32,16 @@ router.post(
   phaseApiController.createApi
 );
 
+router.get(
+  "/:phaseId/phaseApi/example",
+  authController.protect,
+  phaseApiController.example
+);
+
+router.post(
+  "/:phaseId/phaseApi/copy",
+  authController.protect,
+  phaseApiController.copy
+);
+
 module.exports = router;

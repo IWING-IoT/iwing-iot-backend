@@ -560,87 +560,31 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// PUT /api/entry/:entryId (finished)
+// PUT /api/entry/:entryId (testing)
 exports.editEntry = catchAsync(async (req, res, next) => {
-  if (!isValidObjectId(req.params.entryId))
-    return next(new AppError("Invalid entryId", 400));
+  if (!isValidObjectId(req.parmas.entryId))
+    return next(new AppError("Invalid entryId"));
 
   const testEntry = await CategoryEntity.findById(req.params.entryId);
   if (!testEntry) return next(new AppError("Entry not found", 404));
 
-  const attributes = await Attribute.aggregate([
-    {
-      $match: {
-        categoryId: new mongoose.Types.ObjectId(testEntry.categoryId),
-      },
-    },
-    // {
-    //   $lookup: {
-    //     from: "attributes",
-    //     localField: "attributeId",
-    //     foreignField: "_id",
-    //     as: "attribute",
-    //   },
-    // },
-    // {
-    //   $unwind: "$attribute",
-    // },
-    {
-      $sort: {
-        position: 1,
-      },
-    },
-  ]);
+  for (const entry of Object.keys(req.body)) {
+    const attribute = await Attribute.findOne({
+      name: entry,
+      categoryId: testEntry.categoryId,
+    });
 
-  for (const attribute of attributes) {
-    if (attribute.position === 0) {
-      // mainAttribute
-      const mainAttribute = req.body.filter((obj) => !obj.id);
-      console.log("enter mainAttribute");
-      if (mainAttribute.length === 0)
-        return next(new AppError("Invalid input", 400));
-      const updatedAttributeValue = await AttributeValue.findOneAndUpdate(
-        {
-          categoryEntityId: req.params.entryId,
-          attributeId: attribute._id,
-        },
-        {
-          value: mainAttribute[0].value,
-        }
-      );
-    } else {
-      // otherAttribute
-      const testAttributeValue = await AttributeValue.findOne({
-        categoryEntityId: req.params.entryId,
+    const updatedAttributeValue = await AttributeValue.findOneAndUpdate(
+      {
+        categoryEntityId: testEntry.categoryId,
         attributeId: attribute._id,
-      });
-      if (!testAttributeValue) {
-        const createdAttributeValue = await AttributeValue.create({
-          categoryEntityId: req.params.entryId,
-          attributeId: attribute._id,
-          value: req.body.filter((obj) => compareId(obj.id, attribute._id))[0]
-            .value,
-          createdAt: Date.now(),
-          createdBy: req.user.id,
-        });
-      } else {
-        const updatedAttributeValue = await AttributeValue.findOneAndUpdate(
-          {
-            categoryEntityId: req.params.entryId,
-            attributeId: attribute._id,
-          },
-          {
-            value: req.body.filter((obj) => compareId(obj.id, attribute._id))[0]
-              .value,
-            editedAt: Date.now(),
-            editedBy: req.user.id,
-          }
-        );
+      },
+      {
+        value: req.body[`${entry}`],
       }
-    }
+    );
   }
-
-  res.status(204).json();
+  res.status(201).json();
 });
 
 // DELETE /api/category/:categoryId

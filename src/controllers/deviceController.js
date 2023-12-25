@@ -4,6 +4,7 @@ const checkCollab = require("./../utils/checkCollab");
 
 const Device = require("../models/deviceModel");
 const AppError = require("../utils/appError");
+const DeviceType = require("../models/deviceTypeModel");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -33,7 +34,7 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
-// POST /api/device
+// POST /api/device (testing)
 exports.createDevice = catchAsync(async (req, res, next) => {
   if (!req.body.name || req.body.type)
     return next(new AppError("Invalid input"));
@@ -60,6 +61,11 @@ exports.getDevices = catchAsync(async (req, res, next) => {
   };
 
   const devices = await Device.aggregate([
+    {
+      $lookup: {
+        from: "",
+      },
+    },
     {
       $match: match,
     },

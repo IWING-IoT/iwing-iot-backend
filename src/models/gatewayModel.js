@@ -11,22 +11,9 @@ const gatewaySchema = new mongoose.Schema({
     ref: "DevicePhase",
     required: [true, "Gateway must has a nodeId"],
   },
-  createdAt: Date,
-  createdBy: {
-    type: mongoose.Schema.ObjectId,
-    ref: "User",
-    required: [true, "Collaborator must has a creatorID"],
+  lastConnection: {
+    type: Date,
   },
-  editedAt: Date,
-  editedBy: {
-    type: mongoose.Schema.ObjectId,
-    ref: "User",
-  },
-  isDeleted: {
-    type: Boolean,
-    default: false,
-  },
-  deletedAt: Date,
 });
 
 const Gateway = mongoose.Schema("Gateway", gatewaySchema);
