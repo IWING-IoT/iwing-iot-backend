@@ -57,7 +57,10 @@ exports.createCategory = catchAsync(async (req, res, next) => {
   if (
     ((arr) => new Set(arr).size !== arr.length)(
       req.body.otherAttribute.map((arr) => arr.name)
-    )
+    ) ||
+    req.body.otherAttribute
+      .map((arr) => arr.name)
+      .includes(req.body.mainAttribute)
   )
     return next(new AppError("Duplicate Attribute Name", 400));
 
@@ -431,14 +434,15 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   );
 
   // Check is attribute name is duplicate
-
   if (
     ((arr) => new Set(arr).size !== arr.length)(
       req.body.otherAttribute.map((arr) => arr.name)
-    )
+    ) ||
+    req.body.otherAttribute
+      .map((arr) => arr.name)
+      .includes(req.body.mainAttribute)
   )
     return next(new AppError("Duplicate Attribute Name", 400));
-
   // Change metadata and mainAttribute
 
   const updatedCategory = await Category.findOneAndUpdate(
