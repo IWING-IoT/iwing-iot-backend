@@ -63,7 +63,11 @@ exports.getDevices = catchAsync(async (req, res, next) => {
   const devices = await Device.aggregate([
     {
       $lookup: {
-        from: "",
+        from: "devicetypes",
+        localField: "type",
+        foreignField: "_id",
+        as: "device"
+
       },
     },
     {

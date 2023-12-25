@@ -242,6 +242,9 @@ exports.copy = catchAsync(async (req, res, next) => {
   if (phases.length === 1)
     return next(new AppError("There is no previous phase for copy", 400));
 
+  // ต้องลบตัวเก่าออกก่อน
+
+  await PhaseApi.deleteMany({ phaseId: req.params.phaseId });
   const previousApis = await PhaseApi.find({ phaseId: phases[1]._id }).sort({
     createdAt: 1,
   });

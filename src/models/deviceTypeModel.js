@@ -4,6 +4,7 @@ const deviceTypeSchema = mongoose.Schema({
   name: {
     type: String,
     required: [true, "DeviceType must has a name"],
+    enum: ["node", "standalone", "gateway"],
   },
   description: String,
 });
