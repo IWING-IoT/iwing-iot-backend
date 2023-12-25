@@ -573,16 +573,22 @@ exports.editEntry = catchAsync(async (req, res, next) => {
       name: entry,
       categoryId: testEntry.categoryId,
     });
-
     const updatedAttributeValue = await AttributeValue.findOneAndUpdate(
       {
-        categoryEntityId: testEntry.categoryId,
+        categoryEntityId: req.params.entryId,
         attributeId: attribute._id,
       },
       {
         value: req.body[`${entry}`],
       }
     );
+    if (!updatedAttributeValue) {
+      await AttributeValue.create({
+        categoryEntityId: req.params.entryId,
+        attributeId: attribute._id,
+        value: req.body[`${entry}`],
+      });
+    }
   }
   res.status(201).json();
 });
