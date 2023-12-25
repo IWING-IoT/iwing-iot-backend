@@ -299,6 +299,15 @@ exports.createEntry = catchAsync(async (req, res, next) => {
     "owner"
   );
 
+  // Check is attribute name is duplicate
+
+  if (
+    ((arr) => new Set(arr).size !== arr.length)(
+      req.body.otherAttribute.map((arr) => arr.name)
+    )
+  )
+    return next(new AppError("Duplicate Attribute Name", 400));
+
   const attributes = await Attribute.find({
     categoryId: req.params.categoryId,
   });
@@ -421,6 +430,15 @@ exports.editCategory = catchAsync(async (req, res, next) => {
     "can_edit",
     "owner"
   );
+
+  // Check is attribute name is duplicate
+
+  if (
+    ((arr) => new Set(arr).size !== arr.length)(
+      req.body.otherAttribute.map((arr) => arr.name)
+    )
+  )
+    return next(new AppError("Duplicate Attribute Name", 400));
 
   // Change metadata and mainAttribute
 
