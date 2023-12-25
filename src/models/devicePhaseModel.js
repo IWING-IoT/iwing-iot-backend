@@ -53,6 +53,6 @@ const devicePhaseSchema = new mongoose.Schema({
   },
 });
 
-const DevicePhase = mongoose.Schema("DevicePhase", devicePhaseSchema);
+const DevicePhase = mongoose.model("DevicePhase", devicePhaseSchema);
 
 module.exports = DevicePhase;
