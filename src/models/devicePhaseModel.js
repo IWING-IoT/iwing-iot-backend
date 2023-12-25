@@ -22,7 +22,8 @@ const devicePhaseSchema = new mongoose.Schema({
   },
   categoryDataId: {
     type: [mongoose.Schema.ObjectId],
-    ref: "CategoryData",
+    ref: "CategoryEntity",
+    default: [],
   },
   messageReceive: {
     type: Number,

@@ -19,6 +19,8 @@ const phaseApiRouter = require("./routes/phaseApiRoutes");
 const testRouter = require("./routes/testRoutes");
 const entryRouter = require("./routes/entryRoutes");
 const deviceRouter = require("./routes/deviceRoutes");
+const devicePhaseRouter = require("./routes/devicePhaseRoutes");
+
 const app = express();
 
 app.use(bodyParser.json());
@@ -39,6 +41,7 @@ app.use("/api/phaseApi", phaseApiRouter);
 app.use("/api/device", deviceRouter);
 app.use("/api/test", testRouter);
 app.use("/api/entry", entryRouter);
+app.use("/api/devicePhase", devicePhaseRouter);
 
 app.use(globalErrorHandler);
 

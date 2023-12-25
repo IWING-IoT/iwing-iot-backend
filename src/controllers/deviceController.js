@@ -51,7 +51,7 @@ exports.createDevice = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
-// GET /api/device
+// GET /api/device (testing)
 exports.getDevices = catchAsync(async (req, res, next) => {
   // Query project that matching requirement
   if (!req.query.type || !req.query.status)
@@ -94,7 +94,7 @@ exports.getDevices = catchAsync(async (req, res, next) => {
   });
 });
 
-// PATCH /api/device/:deviceId/disable
+// PATCH /api/device/:deviceId/disable (testing)
 exports.disableDevice = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.deviceId))
     return next(new AppError("Invalid deviceId", 400));
@@ -112,7 +112,7 @@ exports.disableDevice = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// PATCH /api/device/:deviceId
+// PATCH /api/device/:deviceId (testing)
 exports.editDevice = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.deviceId))
     return next(new AppError("Invalid deviceId", 400));
@@ -126,7 +126,7 @@ exports.editDevice = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// DELETE /api/device/:deviceId
+// DELETE /api/device/:deviceId (testing)
 exports.deleteDevice = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.deviceId))
     return next(new AppError("Invalid deviceId", 400));

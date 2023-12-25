@@ -3,6 +3,7 @@ const express = require("express");
 const authController = require("./../controllers/authController");
 const phaseController = require("./../controllers/phaseController");
 const phaseApiController = require("./../controllers/phaseApiController");
+const devicePhaseController = require("./../controllers/devicePhaseController");
 
 const router = express.Router();
 
@@ -43,5 +44,19 @@ router.post(
   authController.protect,
   phaseApiController.copy
 );
+
+router.post(
+  "/:phaseId/device",
+  authController.protect,
+  devicePhaseController.addDevice
+);
+
+router.get(
+  "/phaseId/device",
+  authController.protect,
+  devicePhaseController.getDevice
+);
+
+
 
 module.exports = router;
