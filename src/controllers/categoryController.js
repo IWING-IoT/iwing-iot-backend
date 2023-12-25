@@ -53,6 +53,14 @@ exports.createCategory = catchAsync(async (req, res, next) => {
     "owner"
   );
 
+  // Check is attribute name is duplicate
+  if (
+    ((arr) => new Set(arr).size !== arr.length)(
+      req.body.otherAttribute.map((arr) => arr.name)
+    )
+  )
+    return next(new AppError("Duplicate Attribute Name", 400));
+
   if (!isValidObjectId(req.params.projectId))
     return next(new AppError("Invalid projectId", 400));
 
@@ -298,15 +306,6 @@ exports.createEntry = catchAsync(async (req, res, next) => {
     "can_edit",
     "owner"
   );
-
-  // Check is attribute name is duplicate
-
-  if (
-    ((arr) => new Set(arr).size !== arr.length)(
-      req.body.otherAttribute.map((arr) => arr.name)
-    )
-  )
-    return next(new AppError("Duplicate Attribute Name", 400));
 
   const attributes = await Attribute.find({
     categoryId: req.params.categoryId,
