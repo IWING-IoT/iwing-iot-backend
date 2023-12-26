@@ -61,8 +61,11 @@ exports.getDevices = catchAsync(async (req, res, next) => {
   const match = {
     // isDeleted: false,
     "device.name": req.query.type,
-    status: req.query.status,
   };
+
+  if (req.query.status !== "all") {
+    match["status"] =  req.query.status,
+  }
 
   const devices = await Device.aggregate([
     {
@@ -124,7 +127,9 @@ exports.editDevice = catchAsync(async (req, res, next) => {
 
   if (!req.fields.name) return next(new AppError("Invalid input", 400));
 
-  await Device.findByIdAndUpdate(req.params.deviceId, { name: req.fields.name });
+  await Device.findByIdAndUpdate(req.params.deviceId, {
+    name: req.fields.name,
+  });
   res.status(204).json();
 });
 
