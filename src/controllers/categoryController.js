@@ -226,6 +226,9 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
       const testParentCategory = await Category.findById(
         otherAttribute[i]["parentCategoryId"]
       );
+      if (!testParentCategory) {
+        continue;
+      }
       otherAttribute[i]["category"]["name"] = testParentCategory.name;
       delete otherAttribute[i].parentCategoryId;
     }
@@ -346,7 +349,9 @@ exports.createEntry = catchAsync(async (req, res, next) => {
         reason = "Invalid parentId";
         break;
       }
-      const testEntry = await CategoryEntity.findById(req.fields[`${attribute}`]);
+      const testEntry = await CategoryEntity.findById(
+        req.fields[`${attribute}`]
+      );
       if (!testEntry) {
         failed = true;
         reason = "Parent Reference not found";
