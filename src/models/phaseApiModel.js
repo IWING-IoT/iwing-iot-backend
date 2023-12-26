@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const dataTypeEnum = ["String", "Number", "Boolean"];
+const dataTypeEnum = ["String", "Number", "Boolean", "Date"];
 
 const phaseApiSchema = new mongoose.Schema({
   phaseId: {

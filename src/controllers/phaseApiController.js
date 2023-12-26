@@ -85,7 +85,8 @@ exports.getApi = catchAsync(async (req, res, next) => {
     req.user._id,
     "You do not have permission to view a new api.",
     "can_edit",
-    "can_view"
+    "can_view",
+    "owner"
   );
 
   const api = await PhaseApi.aggregate([
