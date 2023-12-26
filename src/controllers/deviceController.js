@@ -64,7 +64,7 @@ exports.getDevices = catchAsync(async (req, res, next) => {
   };
 
   if (req.query.status !== "all") {
-    match["status"] =  req.query.status,
+    match["status"] = req.query.status;
   }
 
   const devices = await Device.aggregate([
