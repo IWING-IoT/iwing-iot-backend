@@ -98,7 +98,7 @@ exports.getDevices = catchAsync(async (req, res, next) => {
   for (const device of devices) {
     let formatString = "";
     if (device.status === "inuse") {
-      formatString = "Inuse";
+      formatString = "In use";
       const testDevicePhase = await DevicePhase.findOne({
         deviceId: device.id,
       });
