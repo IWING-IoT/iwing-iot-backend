@@ -26,7 +26,7 @@ const firmwareVersionRouter = require("./routes/firmwareVersionRoutes");
 
 const app = express();
 
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
 app.use(formidableMiddleware());
 
 app.use(morgan("dev"));

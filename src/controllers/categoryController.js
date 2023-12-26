@@ -56,11 +56,11 @@ exports.createCategory = catchAsync(async (req, res, next) => {
   // Check is attribute name is duplicate
   if (
     ((arr) => new Set(arr).size !== arr.length)(
-      req.body.otherAttribute.map((arr) => arr.name)
+      req.fields.otherAttribute.map((arr) => arr.name)
     ) ||
-    req.body.otherAttribute
+    req.fields.otherAttribute
       .map((arr) => arr.name)
-      .includes(req.body.mainAttribute)
+      .includes(req.fields.mainAttribute)
   )
     return next(new AppError("Duplicate Attribute Name", 400));
 
@@ -70,16 +70,16 @@ exports.createCategory = catchAsync(async (req, res, next) => {
   const testProject = await Project.findById(req.params.projectId);
   if (!testProject) return next(new AppError("Project not found", 404));
 
-  if (!req.body.name || !req.body.mainAttribute)
+  if (!req.fields.name || !req.fields.mainAttribute)
     return next(new AppError("Invalid input", 400));
 
-  const testCategory = await Category.findOne({ name: req.body.name });
+  const testCategory = await Category.findOne({ name: req.fields.name });
   if (testCategory) return next(new AppError("Duplicate category name", 400));
 
   // Create category
   const createCategory = await Category.create({
-    name: req.body.name,
-    description: req.body.description ? req.body.description : "",
+    name: req.fields.name,
+    description: req.fields.description ? req.fields.description : "",
     projectId: req.params.projectId,
     createdAt: Date.now(),
     createdBy: req.user.id,
@@ -89,7 +89,7 @@ exports.createCategory = catchAsync(async (req, res, next) => {
   // Main
   const mainAttribute = await Attribute.create({
     categoryId: createCategory._id,
-    name: req.body.mainAttribute,
+    name: req.fields.mainAttribute,
     type: "string",
     position: 0,
     createdAt: Date.now(),
@@ -97,7 +97,7 @@ exports.createCategory = catchAsync(async (req, res, next) => {
   });
   // Others
   let position = 1;
-  for (const attribute of req.body.otherAttribute) {
+  for (const attribute of req.fields.otherAttribute) {
     let tempAttribute = {
       categoryId: createCategory._id,
       position,
@@ -319,7 +319,7 @@ exports.createEntry = catchAsync(async (req, res, next) => {
   });
 
   // Check input validity
-  for (const attribute of Object.keys(req.body)) {
+  for (const attribute of Object.keys(req.fields)) {
     if (!attributes.map((obj) => obj.name).includes(attribute))
       return next(new AppError("Invalid input", 400));
   }
@@ -335,18 +335,18 @@ exports.createEntry = catchAsync(async (req, res, next) => {
   let reason = "";
   let errCode = 400;
   // Create Attribute Value
-  for (const attribute of Object.keys(req.body)) {
+  for (const attribute of Object.keys(req.fields)) {
     const dataAttribute = await Attribute.findOne({
       name: attribute,
       categoryId: req.params.categoryId,
     });
     if (dataAttribute.type === "category_reference") {
-      if (!isValidObjectId(req.body[`${attribute}`])) {
+      if (!isValidObjectId(req.fields[`${attribute}`])) {
         failed = true;
         reason = "Invalid parentId";
         break;
       }
-      const testEntry = await CategoryEntity.findById(req.body[`${attribute}`]);
+      const testEntry = await CategoryEntity.findById(req.fields[`${attribute}`]);
       if (!testEntry) {
         failed = true;
         reason = "Parent Reference not found";
@@ -357,7 +357,7 @@ exports.createEntry = catchAsync(async (req, res, next) => {
     const attributeValue = await AttributeValue.create({
       categoryEntityId: createEntry._id,
       attributeId: dataAttribute._id,
-      value: req.body[`${attribute}`],
+      value: req.fields[`${attribute}`],
     });
   }
 
@@ -440,11 +440,11 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   // Check is attribute name is duplicate
   if (
     ((arr) => new Set(arr).size !== arr.length)(
-      req.body.otherAttribute.map((arr) => arr.name)
+      req.fields.otherAttribute.map((arr) => arr.name)
     ) ||
-    req.body.otherAttribute
+    req.fields.otherAttribute
       .map((arr) => arr.name)
-      .includes(req.body.mainAttribute)
+      .includes(req.fields.mainAttribute)
   )
     return next(new AppError("Duplicate Attribute Name", 400));
   // Change metadata and mainAttribute
@@ -452,8 +452,8 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   const updatedCategory = await Category.findOneAndUpdate(
     { _id: req.params.categoryId },
     {
-      name: req.body.name,
-      description: req.body.description,
+      name: req.fields.name,
+      description: req.fields.description,
       editedAt: Date.now(),
       editedBy: req.user.id,
     }
@@ -465,7 +465,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
       position: 0,
     },
     {
-      name: req.body.mainAttribute,
+      name: req.fields.mainAttribute,
       editedAt: Date.now(),
       editedBy: req.user.id,
     }
@@ -483,7 +483,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
   oldAttributes.shift();
 
   let position = 1;
-  for (const newAttribute of req.body.otherAttribute) {
+  for (const newAttribute of req.fields.otherAttribute) {
     if (newAttribute.id) {
       const updatedDoc = {};
       // edit attribute เก่า
@@ -566,14 +566,12 @@ exports.editCategory = catchAsync(async (req, res, next) => {
 
 // PUT /api/entry/:entryId (finished)
 exports.editEntry = catchAsync(async (req, res, next) => {
-  console.log("Edit Entry");
   if (!isValidObjectId(req.params.entryId))
     return next(new AppError("Invalid entryId"));
-
   const testEntry = await CategoryEntity.findById(req.params.entryId);
   if (!testEntry) return next(new AppError("Entry not found", 404));
-
-  for (const entry of Object.keys(req.body)) {
+  console.log(req.fields);
+  for (const entry of Object.keys(req.fields)) {
     const attribute = await Attribute.findOne({
       name: entry,
       categoryId: testEntry.categoryId,
@@ -584,14 +582,14 @@ exports.editEntry = catchAsync(async (req, res, next) => {
         attributeId: attribute._id,
       },
       {
-        value: req.body[`${entry}`],
+        value: req.fields[`${entry}`],
       }
     );
     if (!updatedAttributeValue) {
       await AttributeValue.create({
         categoryEntityId: req.params.entryId,
         attributeId: attribute._id,
-        value: req.body[`${entry}`],
+        value: req.fields[`${entry}`],
       });
     }
   }

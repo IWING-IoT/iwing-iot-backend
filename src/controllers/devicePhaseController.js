@@ -66,14 +66,14 @@ exports.addDevice = catchAsync(async (req, res, next) => {
     "owner"
   );
 
-  for (const device of req.body) {
+  for (const device of req.fields) {
     const testDevice = await Device.findById(device.deviceId);
     if (!testDevice) continue;
     if (testDevice.status !== "available") continue;
     let devicePhaseCreate = await DevicePhase.create({
       deviceId: testDevice._id,
       phaseId: req.params.phaseId,
-      alias: req.body.alias && req.body.alias !== "" ? req.body.alias : "",
+      alias: req.fields.alias && req.fields.alias !== "" ? req.fields.alias : "",
       status: "inactive",
       createdAt: Date.now(),
       createdBy: req.user.id,
@@ -226,7 +226,7 @@ exports.deviceStatus = catchAsync(async (req, res, next) => {
     return next(new AppError("Cannot change archived device status", 400));
 
   await DevicePhase.findByIdAndUpdate(req.params.devicePhaseId, {
-    status: req.body.isActive ? "active" : "inactive",
+    status: req.fields.isActive ? "active" : "inactive",
     editedAt: Date.now(),
     editedBy: req.user.id,
   });
@@ -326,16 +326,16 @@ exports.editDevice = catchAsync(async (req, res, next) => {
     "owner"
   );
 
-  if (req.body.alias) {
+  if (req.fields.alias) {
     await DevicePhase.findByIdAndUpdate(req.params.devicePhaseId, {
-      alias: req.body.alias,
+      alias: req.fields.alias,
     });
   }
 
-  if (req.body.associate) {
+  if (req.fields.associate) {
     const validEntry = [];
     // Check if type of entry id is correct
-    for (const associate of req.body.associate) {
+    for (const associate of req.fields.associate) {
       const testEntry = await CategoryEntity.findById(associate);
       if (!testEntry) continue;
       validEntry.push(associate);

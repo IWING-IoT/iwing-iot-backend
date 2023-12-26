@@ -28,7 +28,7 @@ exports.createPhase = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.projectId))
     return next(new AppError("Invalid projectId", 400));
 
-  if (!req.body.name) return next(new AppError("Phase required name.", 400));
+  if (!req.fields.name) return next(new AppError("Phase required name.", 400));
 
   // Check permission wheather use has permission to create new phase
   const projectCollab = await Collaborator.findOne({
@@ -51,9 +51,9 @@ exports.createPhase = catchAsync(async (req, res, next) => {
   );
 
   const newPhase = await Phase.create({
-    name: req.body.name,
-    startedAt: req.body.startedAt || Date.now(),
-    description: req.body.description || "",
+    name: req.fields.name,
+    startedAt: req.fields.startedAt || Date.now(),
+    description: req.fields.description || "",
     projectId: req.params.projectId,
     createdAt: Date.now(),
     createdBy: req.user._id,
@@ -120,13 +120,13 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
     "can_edit"
   );
 
-  if (req.body.isActive)
+  if (req.fields.isActive)
     return next(new AppError("You cannot change phase to active", 400));
 
   const updatedPhase = await Phase.findOneAndUpdate(
     { _id: req.params.phaseId },
     {
-      isActive: req.body.isActive,
+      isActive: req.fields.isActive,
       editedAt: Date.now(),
       editedBy: req.user._id,
     }

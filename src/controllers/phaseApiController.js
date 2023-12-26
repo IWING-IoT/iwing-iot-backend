@@ -26,7 +26,7 @@ const compareId = (id1, id2) => {
 // POST /api/phase/:phaseId/phaseApi (testing)
 exports.createApi = catchAsync(async (req, res, next) => {
   const phaseId = req.params.phaseId;
-  if (!req.body.dataType || !req.body.name || !isValidObjectId(phaseId))
+  if (!req.fields.dataType || !req.fields.name || !isValidObjectId(phaseId))
     return next(
       new AppError(
         "Please input all required input for creating new project.",
@@ -41,7 +41,7 @@ exports.createApi = catchAsync(async (req, res, next) => {
 
   const testApis = await PhaseApi.find({ phaseId });
   for (const api of testApis) {
-    if (api.name === req.body.name)
+    if (api.name === req.fields.name)
       return next(new AppError("Api name already exist", 400));
   }
   await checkCollab(
@@ -55,7 +55,7 @@ exports.createApi = catchAsync(async (req, res, next) => {
 
   const newApi = await PhaseApi.create({
     phaseId,
-    ...req.body,
+    ...req.fields,
   });
 
   res.status(201).json();
@@ -151,12 +151,12 @@ exports.edited = catchAsync(async (req, res, next) => {
 
   console.log(apis);
   for (const api of apis) {
-    if (req.body.name && api.name === req.body.name) {
+    if (req.fields.name && api.name === req.fields.name) {
       return next(new AppError("Duplicate api name", 400));
     }
   }
 
-  const editPhaseApi = await PhaseApi.findByIdAndUpdate(phaseApiId, req.body);
+  const editPhaseApi = await PhaseApi.findByIdAndUpdate(phaseApiId, req.fields);
 
   res.status(204).json();
 });

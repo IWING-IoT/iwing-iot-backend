@@ -6,7 +6,7 @@ const catchAsync = require("./../utils/catchAsync");
 const Role = require("./../models/roleModel");
 
 exports.addRole = catchAsync(async (req, res, next) => {
-  const role = req.body;
+  const role = req.fields;
   console.log(role);
   if (!role.name) return next(new AppError("Role required name"));
   const test = await Role.findOne({ name: role.name });

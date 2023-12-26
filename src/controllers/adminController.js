@@ -29,7 +29,7 @@ const isValidObjectId = (id) => {
 };
 
 exports.addUser = catchAsync(async (req, res, next) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role } = req.fields;
 
   // Check email validation
   const test = await User.findOne({ email });
@@ -91,13 +91,13 @@ exports.edited = catchAsync(async (req, res, next) => {
 
   const testUser = await User.findById(req.params.accountId);
 
-  const newRole = await Role.findOne({ name: req.body.role });
+  const newRole = await Role.findOne({ name: req.fields.role });
 
   const editedUser = await User.findOneAndUpdate(
     { _id: req.params.accountId },
     {
-      name: req.body.name,
-      email: req.body.email,
+      name: req.fields.name,
+      email: req.fields.email,
       roleId: newRole ? newRole._id : testUser.roleId,
       editedAt: Date.now(),
     }

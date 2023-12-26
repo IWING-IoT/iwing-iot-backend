@@ -6,7 +6,7 @@ const catchAsync = require("./../utils/catchAsync");
 const Permission = require("./../models/permissionModel");
 
 exports.createPermission = catchAsync(async (req, res, next) => {
-  const permission = req.body;
+  const permission = req.fields;
   // Check if request has all required input
   if (!permission.name || !permission.description)
     return next(

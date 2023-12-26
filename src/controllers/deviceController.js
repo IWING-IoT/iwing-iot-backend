@@ -39,13 +39,13 @@ const paginate = (array, page_size, page_number) => {
 
 // POST /api/device (testing)
 exports.createDevice = catchAsync(async (req, res, next) => {
-  if (!req.body.name || !req.body.type)
+  if (!req.fields.name || !req.fields.type)
     return next(new AppError("Invalid input"));
-  const testDevice = await Device.findOne({ name: req.body.name });
+  const testDevice = await Device.findOne({ name: req.fields.name });
   if (testDevice) return next(new AppError("Duplicate device name", 400));
-  const type = await DeviceType.findOne({ name: req.body.type });
+  const type = await DeviceType.findOne({ name: req.fields.type });
   const createdDevice = await Device.create({
-    ...req.body,
+    ...req.fields,
     type: type._id,
     createdAt: Date.now(),
     createdBy: req.user.id,
@@ -108,7 +108,7 @@ exports.disableDevice = catchAsync(async (req, res, next) => {
     return next(new AppError("Cannot change inuse device state", 400));
 
   await Device.findByIdAndUpdate(req.params.deviceId, {
-    status: req.body.disable ? "unavailable" : "available",
+    status: req.fields.disable ? "unavailable" : "available",
   });
 
   res.status(204).json();
@@ -122,9 +122,9 @@ exports.editDevice = catchAsync(async (req, res, next) => {
   const testDevice = await Device.findById(req.params.deviceId);
   if (!testDevice) return next(new AppError("Device not found", 404));
 
-  if (!req.body.name) return next(new AppError("Invalid input", 400));
+  if (!req.fields.name) return next(new AppError("Invalid input", 400));
 
-  await Device.findByIdAndUpdate(req.params.deviceId, { name: req.body.name });
+  await Device.findByIdAndUpdate(req.params.deviceId, { name: req.fields.name });
   res.status(204).json();
 });
 

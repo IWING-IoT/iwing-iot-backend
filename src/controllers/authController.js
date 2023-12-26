@@ -13,7 +13,7 @@ const signToken = (objectSigned) => {
 
 // API /signin
 exports.signin = catchAsync(async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password } = req.fields;
 
   // Check if email and password is exist from client
   if (!email || !password)

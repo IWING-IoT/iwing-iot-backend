@@ -38,7 +38,7 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
     "owner"
   );
 
-  for (const collaborator of req.body) {
+  for (const collaborator of req.fields) {
     // Check if request has all required input
     if (
       !collaborator.email ||
@@ -111,7 +111,7 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
 
 // PATCH /api/collaborator/:collaboratorId (finished)
 exports.editCollaborator = catchAsync(async (req, res, next) => {
-  const newPermission = req.body;
+  const newPermission = req.fields;
   const collaboratorId = req.params.collaboratorId;
 
   if (!newPermission.permission)

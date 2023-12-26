@@ -118,7 +118,7 @@ exports.getProjects = catchAsync(async (req, res, next) => {
 });
 
 exports.createProject = catchAsync(async (req, res, next) => {
-  const project = req.body;
+  const project = req.fields;
   // Check all input requirement
   if (
     !project.name ||
@@ -139,7 +139,7 @@ exports.createProject = catchAsync(async (req, res, next) => {
   // Create new project
   const newProject = await Project.create({
     owner: req.user._id,
-    startedAt: new Date(req.body.startedAt) || Date.now(),
+    startedAt: new Date(req.fields.startedAt) || Date.now(),
     createdAt: Date.now(),
     editedAt: Date.now(),
     editedBy: req.user._id,
@@ -251,7 +251,7 @@ exports.archived = catchAsync(async (req, res, next) => {
     userId: req.user._id,
   });
 
-  if (!req.body.isArchived)
+  if (!req.fields.isArchived)
     return next(new AppError("Cannot unarchived project", 400));
 
   if (!projectCollab)
@@ -285,7 +285,7 @@ exports.archived = catchAsync(async (req, res, next) => {
       _id: req.params.projectId,
     },
     {
-      isArchived: req.body.isArchived,
+      isArchived: req.fields.isArchived,
       editedBy: req.user._id,
       editedAt: Date.now(),
       endedAt: Date.now(),
@@ -369,7 +369,7 @@ exports.edited = catchAsync(async (req, res, next) => {
     {
       editedAt: Date.now(),
       editedBy: req.user._id,
-      ...req.body,
+      ...req.fields,
     }
   );
   res.status(204).json();

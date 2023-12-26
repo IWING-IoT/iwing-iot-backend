@@ -16,7 +16,7 @@ exports.createTemplate = catchAsync(async (req, res, next) => {
     createdAt: Date.now(),
     editedBy: req.user._id,
     editedAt: Date.now(),
-    ...req.body,
+    ...req.fields,
   });
   res.status(201).json();
 });
@@ -26,7 +26,7 @@ exports.editTemplate = catchAsync(async (req, res, next) => {
   console.log(templateId);
   const newTemplate = await Template.findOneAndUpdate(
     { _id: templateId },
-    req.body
+    req.fields
   );
   res.status(201).json();
 });
