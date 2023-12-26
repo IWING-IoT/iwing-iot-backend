@@ -91,6 +91,11 @@ exports.getApi = catchAsync(async (req, res, next) => {
 
   const api = await PhaseApi.aggregate([
     {
+      $match: {
+        phaseId: new mongoose.Types.ObjectId(req.params.phaseId),
+      },
+    },
+    {
       $project: {
         id: "$_id",
         _id: 0,
@@ -216,7 +221,7 @@ exports.example = catchAsync(async (req, res, next) => {
   for (const api of apis) {
     formatOutput["gateway"][
       `${api.name}`
-    ] = `enter ${api.name} with type ${api.type}`;
+    ] = `enter ${api.name} with type ${api.dataType}`;
 
     formatOutput["default"][
       `${api.name}`
