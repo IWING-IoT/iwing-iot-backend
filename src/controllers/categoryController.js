@@ -566,6 +566,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
 
 // PUT /api/entry/:entryId (finished)
 exports.editEntry = catchAsync(async (req, res, next) => {
+  console.log("Edit Entry");
   if (!isValidObjectId(req.params.entryId))
     return next(new AppError("Invalid entryId"));
 
@@ -594,7 +595,7 @@ exports.editEntry = catchAsync(async (req, res, next) => {
       });
     }
   }
-  res.status(201).json();
+  res.status(204).json();
 });
 
 // DELETE /api/category/:categoryId (testing)
