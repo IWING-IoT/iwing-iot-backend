@@ -24,7 +24,7 @@ const compareId = (id1, id2) => {
 };
 
 
-
+// POST /api/project/:projectId/collaborator (finished)
 exports.createCollaborator = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;
   const invalidCollaborator = [];
@@ -109,6 +109,7 @@ exports.createCollaborator = catchAsync(async (req, res, next) => {
   });
 });
 
+// PATCH /api/collaborator/:collaboratorId (finished)
 exports.editCollaborator = catchAsync(async (req, res, next) => {
   const newPermission = req.body;
   const collaboratorId = req.params.collaboratorId;
@@ -178,6 +179,7 @@ exports.editCollaborator = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
+// DELETE /api/collaborator/:collaboratorId (finished)
 exports.deleteCollaborator = catchAsync(async (req, res, next) => {
   const collaboratorId = req.params.collaboratorId;
   if (!isValidObjectId(collaboratorId))
@@ -215,6 +217,7 @@ exports.deleteCollaborator = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
+// GET /project/:projectId/collaborator (finished)
 exports.getCollaborator = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;
 

@@ -9,8 +9,11 @@ const Device = require("./../models/deviceModel");
 const DevicePhase = require("../models/devicePhaseModel");
 const DeviceType = require("../models/deviceTypeModel");
 const CategoryEntity = require("../models/categoryEntityModel");
+const Attribute = require("../models/attributeModel");
+const AttributeValue = require("../models/attributeValueModel");
 
 const { sign } = require("crypto");
+const jwt = require("jsonwebtoken");
 
 const signToken = (objectSigned) => {
   return jwt.sign(objectSigned, process.env.JWT_SECRET, {
@@ -54,13 +57,23 @@ exports.addDevice = catchAsync(async (req, res, next) => {
   const testPhase = await Phase.findById(req.params.phaseId);
   if (!testPhase) return next(new AppError("Phase not found", 404));
 
+  await checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to add device.",
+    "can_edit",
+    "owner"
+  );
+
   for (const device of req.body) {
     const testDevice = await Device.findById(device.deviceId);
     if (!testDevice) continue;
+    if (testDevice.status !== "available") continue;
     let devicePhaseCreate = await DevicePhase.create({
       deviceId: testDevice._id,
       phaseId: req.params.phaseId,
-      alias: req.body.alias && req.body.alias === "" ? req.body.alias : "",
+      alias: req.body.alias && req.body.alias !== "" ? req.body.alias : "",
       status: "inactive",
       createdAt: Date.now(),
       createdBy: req.user.id,
@@ -76,14 +89,117 @@ exports.addDevice = catchAsync(async (req, res, next) => {
           }),
         }
       );
+
+    testDevice.status = "inuse";
+    testDevice.save();
   }
 
   res.status(201).json();
 });
 
-// GET /api/phase/:phaseId/device
+// GET /api/phase/:phaseId/device (testing)
 exports.getDevice = catchAsync(async (req, res, next) => {
-  res.status(200).json();
+  if (!isValidObjectId(req.params.phaseId))
+    return next(new AppError("Invalid phaseId", 400));
+
+  const testPhase = await Phase.findById(req.params.phaseId);
+  if (!testPhase) return next(new AppError("Phase not found", 404));
+
+  await checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission get device.",
+    "can_edit",
+    "owner",
+    "can_view"
+  );
+
+  const match = {};
+  if (req.query.type) {
+    match[`deviceType.name`] = req.query.type;
+  }
+
+  const devicePhases = await DevicePhase.aggregate([
+    {
+      $lookup: {
+        from: "devices",
+        localField: "deviceId",
+        foreignField: "_id",
+        as: "device",
+      },
+    },
+    {
+      $unwind: "$device",
+    },
+    {
+      $lookup: {
+        from: "devicetypes",
+        localField: "device.type",
+        foreignField: "_id",
+        as: "deviceType",
+      },
+    },
+    {
+      $unwind: "$deviceType",
+    },
+    {
+      $match: match,
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        type: "$deviceType.name",
+        name: "$device.name",
+        alias: 1,
+        status: 1,
+        battery: 1,
+        temperature: 1,
+        lastCommunuication: 1,
+        jwt: 1,
+        categoryDataId: 1,
+      },
+    },
+  ]);
+
+  for (const device of devicePhases) {
+    // Update categoryDataId if enntiy not exist
+    const editedEntity = [];
+    const associate = [];
+
+    for (const entity of device.categoryDataId) {
+      const testEntity = await CategoryEntity.findById(entity);
+
+      if (testEntity) {
+        const mainAttribute = await Attribute.findOne({
+          position: 0,
+          categoryId: testEntity.categoryId,
+        });
+
+        const testmainAttributeValue = await AttributeValue.findOne({
+          attributeId: mainAttribute._id,
+          categoryEntityId: testEntity._id,
+        });
+        editedEntity.push(testEntity);
+        associate.push({
+          id: testEntity._id,
+          name: testmainAttributeValue.value,
+        });
+      }
+    }
+
+    await DevicePhase.findByIdAndUpdate(device.id, {
+      categoryDataId: editedEntity,
+    });
+    device.associate = associate;
+    delete device.categoryDataId;
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: devicePhases,
+  });
 });
 
 // PATCH /api/devicePhase/:devicePhaseId/status (testing)
@@ -93,6 +209,18 @@ exports.deviceStatus = catchAsync(async (req, res, next) => {
 
   const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
+
+  const testPhase = await Phase.findById(testDevicePhase.phaseId);
+  if (!testPhase) return next(new AppError("Phase not found", 404));
+
+  await checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to change device status.",
+    "can_edit",
+    "owner"
+  );
 
   if (testDevicePhase.status === "archived")
     return next(new AppError("Cannot change archived device status", 400));
@@ -113,6 +241,17 @@ exports.removeDevice = catchAsync(async (req, res, next) => {
   const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
 
+  const testPhase = await Phase.findById(testDevicePhase.phaseId);
+  if (!testPhase) return next(new AppError("Phase not found", 404));
+  await checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to delete device.",
+    "can_edit",
+    "owner"
+  );
+
   const updatedDevice = await Device.findById(testDevicePhase.deviceId);
   if (!updatedDevice) return next(new AppError("Device not found", 404));
 
@@ -129,6 +268,17 @@ exports.generateJwt = catchAsync(async (req, res, next) => {
 
   const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
+
+  const testPhase = await Phase.findById(testDevicePhase.phaseId);
+  if (!testPhase) return next(new AppError("Phase not found", 404));
+  await checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to genereate new jwt.",
+    "can_edit",
+    "owner"
+  );
 
   const updateDevicePhase = await DevicePhase.findByIdAndUpdate(
     req.params.devicePhaseId,
@@ -164,6 +314,17 @@ exports.editDevice = catchAsync(async (req, res, next) => {
 
   const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
+
+  const testPhase = await Phase.findById(testDevicePhase.phaseId);
+  if (!testPhase) return next(new AppError("Phase not found", 404));
+  await checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to edit device.",
+    "can_edit",
+    "owner"
+  );
 
   if (req.body.alias) {
     await DevicePhase.findByIdAndUpdate(req.params.devicePhaseId, {

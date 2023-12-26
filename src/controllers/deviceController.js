@@ -7,6 +7,8 @@ const AppError = require("../utils/appError");
 const DeviceType = require("../models/deviceTypeModel");
 const DevicePhase = require("../models/devicePhaseModel");
 
+const jwt = require("jsonwebtoken");
+
 /**
  * @desc check wheather input id is valid mongodb objectID
  * @param {String} id that want to check

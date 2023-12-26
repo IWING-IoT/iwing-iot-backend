@@ -20,6 +20,8 @@ const testRouter = require("./routes/testRoutes");
 const entryRouter = require("./routes/entryRoutes");
 const deviceRouter = require("./routes/deviceRoutes");
 const devicePhaseRouter = require("./routes/devicePhaseRoutes");
+const firmwareRouter = require("./routes/firmwareRoutes");
+const firmwareVersionRouter = require("./routes/firmwareVersionRoutes");
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.use("/api/device", deviceRouter);
 app.use("/api/test", testRouter);
 app.use("/api/entry", entryRouter);
 app.use("/api/devicePhase", devicePhaseRouter);
+app.use("/api/firmware", firmwareRouter);
+app.use("/api/firmwareVersion", firmwareVersionRouter);
 
 app.use(globalErrorHandler);
 

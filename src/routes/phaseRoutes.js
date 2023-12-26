@@ -21,6 +21,8 @@ router.patch(
 
 router.get("/:phaseId", authController.protect, phaseController.getInfo);
 
+
+// PhaseApi API
 router.get(
   "/:phaseId/phaseApi",
   authController.protect,
@@ -45,6 +47,8 @@ router.post(
   phaseApiController.copy
 );
 
+
+// Device API
 router.post(
   "/:phaseId/device",
   authController.protect,
@@ -52,11 +56,9 @@ router.post(
 );
 
 router.get(
-  "/phaseId/device",
+  "/:phaseId/device",
   authController.protect,
   devicePhaseController.getDevice
 );
-
-
 
 module.exports = router;
