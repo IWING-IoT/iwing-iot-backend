@@ -2,6 +2,7 @@ const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const formidableMiddleware = require("express-formidable");
 
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./utils/errorHandler");
@@ -26,6 +27,7 @@ const firmwareVersionRouter = require("./routes/firmwareVersionRoutes");
 const app = express();
 
 app.use(bodyParser.json());
+app.use(formidableMiddleware());
 
 app.use(morgan("dev"));
 app.use(cors());

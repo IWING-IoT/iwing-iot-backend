@@ -257,28 +257,34 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
         const testParentEntry = await CategoryEntity.findById(
           attributeValue.value
         );
-        if (!testParentEntry)
-          return next(new AppError("Parent Data not found", 404));
+        if (!testParentEntry) {
+          // remove invalid parentEntity
+          await AttributeValue.findByIdAndUpdate(attributeValue._id, {
+            value: null,
+          });
+        } else {
+          const testmainAttributeParent = await Attribute.findOne({
+            position: 0,
+            categoryId: testParentEntry.categoryId,
+          });
+          if (!testmainAttributeParent)
+            return next(
+              new AppError("Main Attribute of parent not found", 404)
+            );
 
-        const testmainAttributeParent = await Attribute.findOne({
-          position: 0,
-          categoryId: testParentEntry.categoryId,
-        });
-        if (!testmainAttributeParent)
-          return next(new AppError("Main Attribute of parent not found", 404));
-
-        const testAttributeValue = await AttributeValue.findOne({
-          attributeId: testmainAttributeParent,
-          categoryEntityId: testParentEntry._id,
-        });
-        if (!testAttributeValue)
-          return next(
-            new AppError("Main Attribute data of parent not found", 404)
-          );
-        formatEntry[`${attribute.name}`] = {
-          id: testParentEntry._id,
-          name: testAttributeValue.value,
-        };
+          const testAttributeValue = await AttributeValue.findOne({
+            attributeId: testmainAttributeParent,
+            categoryEntityId: testParentEntry._id,
+          });
+          if (!testAttributeValue)
+            return next(
+              new AppError("Main Attribute data of parent not found", 404)
+            );
+          formatEntry[`${attribute.name}`] = {
+            id: testParentEntry._id,
+            name: testAttributeValue.value,
+          };
+        }
       } else {
         formatEntry[`${attribute.name}`] = attributeValue.value;
       }

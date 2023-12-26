@@ -38,6 +38,11 @@ exports.getFirmware = catchAsync(async (req, res, next) => {
 
 // POST /api/firmware
 exports.createFirmware = catchAsync(async (req, res, next) => {
+  // Check input
+  const { name, type, versionName, gitUrl, description } = req["fields"];
+  if (!name || !type || !versionName)
+    return next(new AppError("Invalid input", 40));
+
   res.status(201).json();
 });
 
