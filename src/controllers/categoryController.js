@@ -259,9 +259,7 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
         );
         if (!testParentEntry) {
           // remove invalid parentEntity
-          await AttributeValue.findByIdAndUpdate(attributeValue._id, {
-            value: null,
-          });
+          await AttributeValue.deleteOne({ _id: attributeValue._id });
         } else {
           const testmainAttributeParent = await Attribute.findOne({
             position: 0,
