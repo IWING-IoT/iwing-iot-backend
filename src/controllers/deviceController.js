@@ -8,6 +8,8 @@ const DeviceType = require("../models/deviceTypeModel");
 const DevicePhase = require("../models/devicePhaseModel");
 
 const jwt = require("jsonwebtoken");
+const Project = require("../models/projectModel");
+const Phase = require("../models/phaseModel");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -93,6 +95,26 @@ exports.getDevices = catchAsync(async (req, res, next) => {
     },
   ]);
 
+  for (const device of devices) {
+    let formatString = "";
+    if (device.status === "inuse") {
+      formatString = "Inuse";
+      const testDevicePhase = await DevicePhase.findOne({
+        deviceId: device.id,
+      });
+      const testPhase = await Phase.findById(testDevicePhase.phaseId);
+      if (!testPhase) continue;
+
+      const testProject = await Project.findById(testPhase.projectId);
+      if (!testProject) continue;
+
+      formatString += ` by ${testProject.name}`;
+    } else {
+      formatString = device.status;
+    }
+    formatString = formatString[0].toUpperCase() + formatString.slice(1);
+    device.status = formatString;
+  }
   res.status(200).json({
     status: "success",
     data: devices,
