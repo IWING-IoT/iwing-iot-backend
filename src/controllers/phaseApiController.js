@@ -220,7 +220,7 @@ exports.example = catchAsync(async (req, res, next) => {
 
     formatOutput["default"][
       `${api.name}`
-    ] = `enter ${api.name} with type ${api.type}`;
+    ] = `enter ${api.name} with type ${api.dataType}`;
   }
   res.status(200).json({
     status: "success",
