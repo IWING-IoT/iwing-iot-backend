@@ -9,6 +9,12 @@ router.get("/", authController.protect, firmwareController.getFirmware);
 
 router.post("/", authController.protect, firmwareController.createFirmware);
 
+router.get(
+  "/:firmwareId",
+  authController.protect,
+  firmwareController.getVersions
+);
+
 router.post(
   "/:firmwareId",
   authController.protect,
@@ -22,7 +28,7 @@ router.delete(
 );
 
 router.patch(
-  "/firmware/:firmwareId",
+  "/:firmwareId",
   authController.protect,
   firmwareController.editFirmware
 );

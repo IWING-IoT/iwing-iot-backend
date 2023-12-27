@@ -601,7 +601,7 @@ exports.editEntry = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// DELETE /api/category/:categoryId (testing)
+// DELETE /api/category/:categoryId (developing)
 exports.deleteCategory = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
@@ -624,16 +624,16 @@ exports.deleteCategory = catchAsync(async (req, res, next) => {
       },
     },
     {
-      _id: "$categoryId",
+      $group: { _id: "$categoryId" },
     },
   ]);
 
   // run เลข position ใน attribute ใหม่ของทุก category
-
-  // AttributeValue
   const entries = await CategoryEntity.find({
     categoryId: req.params.categoryId,
   });
+
+  // AttributeValue
 
   // for (const entry of entries) {
   //   await AttributeValue.deleteMany({ categoryEntityId: entry._id });
@@ -646,7 +646,7 @@ exports.deleteCategory = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// DELETE /api/entry/:entryId (testing)
+// DELETE /api/entry/:entryId (finished)
 exports.deleteEntry = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.entryId))
     return next(new AppError("Invalid entryId", 400));

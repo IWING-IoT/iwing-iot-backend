@@ -3,6 +3,19 @@ const mongoose = require("mongoose");
 const catchAsync = require("./../utils/catchAsync");
 const AppError = require("./../utils/appError");
 
+const Upload = require("./../utils/upload");
+
+const axios = require("axios");
+const fs = require("fs");
+const crypto = require("crypto");
+const Firmware = require("../models/firmwareModel");
+const FirmwareVersion = require("../models/firmwareVersionMode");
+const User = require("../models/userModel");
+const {
+  ListBucketInventoryConfigurationsOutputFilterSensitiveLog,
+} = require("@aws-sdk/client-s3");
+const { version } = require("os");
+
 /**
  * @desc check wheather input id is valid mongodb objectID
  * @param {String} id that want to check
@@ -31,23 +44,172 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
-// GET /api/firmware
+// GET /api/firmware (testing)
 exports.getFirmware = catchAsync(async (req, res, next) => {
-  res.status(200).json();
+  if (!req.query.type) return next(new AppError("Invalid input", 400));
+  const firmwares = await Firmware.aggregate([
+    {
+      $match: {
+        type: req.query.type,
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        name: 1,
+        type: 1,
+      },
+    },
+  ]);
+
+  for (const firmware of firmwares) {
+    const firmwareVersions = await FirmwareVersion.find({
+      firmwareId: firmware.id,
+    }).sort({ createdAt: -1 });
+    firmware.lastUpdate = firmwareVersions[0].createdAt;
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: firmwares,
+  });
 });
 
-// POST /api/firmware
+// POST /api/firmware (testing)
 exports.createFirmware = catchAsync(async (req, res, next) => {
   // Check input
-  const { name, type, versionName, gitUrl, description } = req["fields"];
-  if (!name || !type || !versionName)
-    return next(new AppError("Invalid input", 40));
+  const { name, type, versionName, gitUrl, description, versionDescription } =
+    req["fields"];
+  if (!name || !type || !versionName || !req.files.file)
+    return next(new AppError("Invalid input", 400));
 
+  // Create firmware
+  const createdFirmware = await Firmware.create({
+    name,
+    type,
+    description,
+    createdAt: Date.now(),
+    createdBy: req.user.id,
+  });
+
+  // Upload file
+  const { filename, url } = await Upload.putObject();
+  const filePath = req.files.file.path; // Get the path of the uploaded file
+  fs.readFile(filePath, async (err, fileData) => {
+    if (err) {
+      return res.status(500).json({ error: "File reading failed." });
+    }
+    await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": req.files.file.type,
+      },
+      body: fileData,
+    });
+  });
+
+  const createdFirmwareVersion = await FirmwareVersion.create({
+    firmwareId: createdFirmware._id,
+    name: versionName,
+    gitUrl,
+    description: versionDescription,
+    filename,
+    createdAt: Date.now(),
+    createdBy: req.user.id,
+  });
   res.status(201).json();
 });
 
-// POST /api/firmware/:firmwareId
+// GET /api/firmware/:firmwareId (testing)
+exports.getVersions = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.firmwareId))
+    return next(new AppError("Invalid firmwareId", 400));
+
+  const testFirmware = await Firmware.findById(req.params.firmwareId);
+  if (!testFirmware) return next(new AppError("Firmware not found", 404));
+
+  const firmwareVersions = await FirmwareVersion.aggregate([
+    {
+      $match: {
+        firmwareId: new mongoose.Types.ObjectId(req.params.firmwareId),
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        name: 1,
+        description: 1,
+        gitUrl: 1,
+        lastUpdate: "$createdAt",
+      },
+    },
+  ]);
+
+  for (const version of firmwareVersions) {
+    if (version.gitUrl && version.gitUrl.length > 0) {
+      const urlParts = version.gitUrl.split("/");
+
+      version.commitNumber = urlParts[urlParts.length - 1].substring(0, 7);
+    }
+  }
+  res.status(200).json({
+    status: "success",
+    data: firmwareVersions,
+  });
+});
+
+// POST /api/firmware/:firmwareId (testing)
 exports.createVersion = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.firmwareId))
+    return next(new AppError("Invalid firmwareId"));
+
+  const testFirmware = await Firmware.findById(req.params.firmwareId);
+  if (!testFirmware) return next(new AppError("Firmware not found", 404));
+
+  const { versionName, gitUrl, versionDescription } = req.fields;
+  if (!req.files.file || !versionName)
+    return next(new AppError("Invalid input", 400));
+
+  const firmwareVersions = await FirmwareVersion.find({
+    firmwareId: req.params.firmwareId,
+  });
+
+  // Check duplicate versionName
+  if (firmwareVersions.map((obj) => obj.name).includes(versionName))
+    return next(new AppError("Duplicate version name", 400));
+
+  const { filename, url } = await Upload.putObject();
+  const filePath = req.files.file.path; // Get the path of the uploaded file
+  fs.readFile(filePath, async (err, fileData) => {
+    if (err) {
+      return res.status(500).json({ error: "File reading failed." });
+    }
+    await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": req.files.file.type,
+      },
+      body: fileData,
+    });
+  });
+
+  const createdFirmwareVersion = await FirmwareVersion.create({
+    firmwareId: req.params.firmwareId,
+    name: versionName,
+    gitUrl,
+    description: versionDescription,
+    filename,
+    createdAt: Date.now(),
+    createdBy: req.user.id,
+  });
+
   res.status(201).json();
 });
 
@@ -61,17 +223,66 @@ exports.deleteVersion = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// PATCH /api/firmware/:firmwareId
+// PATCH /api/firmware/:firmwareId (testing)
 exports.editFirmware = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.firmwareId))
+    return next(new AppError("Invalid firmwareId", 400));
+
+  const testFirmware = await Firmware.findById(req.params.firmwareId);
+  if (!testFirmware) return next(new AppError("Firmware not found", 404));
+
+  await Firmware.findByIdAndUpdate(req.params.firmwareId, {
+    name: req.fields.name,
+    description: req.fields.description,
+    editedAt: Date.now(),
+    editedBy: req.user.id,
+  });
+
   res.status(204).json();
 });
 
-// PATCH /api/firmwareVersion/:firmwareVersionId
+// PATCH /api/firmwareVersion/:firmwareVersionId (developing)
 exports.editVersion = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.parmas.firmwareVersionId))
+    return next(new AppError("Invalid firmwareVersionId", 400));
+
+  const testFirmwareVersion = await FirmwareVersion.findById(
+    req.parmas.firmwareVersionId
+  );
+  if (!testFirmwareVersion)
+    return next(new AppError("Firmware Version not found", 404));
+
+
+
   res.status(204).json();
 });
 
-// GET /api/firmwareVersion/:firmwareVersionId
-exports.getVersion = catchAsync(async (req, res, next) => {
-  res.status(200).json();
+// GET /api/firmwareVersion/:firmwareVersionId (testing)
+exports.getVersionDetail = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.firmwareVersionId))
+    return next(new AppError("Invalid firmwareVersionId", 400));
+
+  const testFirmwareVersion = await FirmwareVersion.findById(
+    req.params.firmwareVersionId
+  );
+
+  if (!testFirmwareVersion)
+    return next(new AppError("Firmware Version not found", 404));
+  console.log(testFirmwareVersion.createdBy);
+  const user = await User.findById(testFirmwareVersion.createdBy);
+  if (!user) return new AppError("User not found", 404);
+
+  const formatOutput = {
+    id: testFirmwareVersion._id,
+    name: testFirmwareVersion.name,
+    description: testFirmwareVersion.description,
+    lastUpdate: testFirmwareVersion.createdAt,
+    updatedBy: user.name,
+    file: process.env.AWS_S3_URL + testFirmwareVersion.filename,
+  };
+
+  res.status(200).json({
+    status: "success",
+    data: formatOutput,
+  });
 });

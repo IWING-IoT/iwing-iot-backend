@@ -16,6 +16,6 @@ const gatewaySchema = new mongoose.Schema({
   },
 });
 
-const Gateway = mongoose.Schema("Gateway", gatewaySchema);
+const Gateway = mongoose.model("Gateway", gatewaySchema);
 
 module.exports = Gateway;

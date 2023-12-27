@@ -20,7 +20,7 @@ router.patch(
 router.get(
   "/:firmwareVersionId",
   authController.protect,
-  firmwareController.getVersion
+  firmwareController.getVersionDetail
 );
 
 module.exports = router;
