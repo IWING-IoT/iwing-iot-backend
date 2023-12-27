@@ -1,4 +1,8 @@
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const catchAsync = require("./catchAsync");
 
@@ -20,16 +24,23 @@ exports.putObject = async () => {
     crypto.randomBytes(bytes).toString("hex");
 
   const filename = generateFileName();
-  const putObjectComand = new PutObjectCommand({
+  const putObjectCommand = new PutObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: filename,
   });
 
-  const signedURL = await getSignedUrl(s3, putObjectComand, {
+  const signedURL = await getSignedUrl(s3, putObjectCommand, {
     expiresIn: 60,
   });
 
   return { filename: filename, url: signedURL };
 };
 
-exports.printFunction = async () => "Hello";
+exports.deleteObject = async (filename) => {
+  console.log(filename);
+  const deleteObjectCommand = new DeleteObjectCommand({
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: filename,
+  });
+  await s3.send(deleteObjectCommand);
+};

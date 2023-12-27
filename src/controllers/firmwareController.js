@@ -11,10 +11,11 @@ const crypto = require("crypto");
 const Firmware = require("../models/firmwareModel");
 const FirmwareVersion = require("../models/firmwareVersionMode");
 const User = require("../models/userModel");
+
+const DeviceFirmware = require("../models/deviceFirmwareModel");
 const {
   ListBucketInventoryConfigurationsOutputFilterSensitiveLog,
 } = require("@aws-sdk/client-s3");
-const { version } = require("os");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -213,14 +214,56 @@ exports.createVersion = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
-// DELETE /api/firmware/:firmwareId
+// DELETE /api/firmware/:firmwareId (testing)
 exports.deleteFirmware = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.firmwareId))
+    return next(new AppError("Invalid firmwareId", 400));
+
+  const testFirmware = await Firmware.findById(req.params.firmwareId);
+  if (!testFirmware) return next(new AppError("Firmware not found", 404));
+
+  // Delete each versionFirmware
+  const versionFirmwares = await FirmwareVersion.find({
+    firmwareId: req.params.firmwareId,
+  });
+
+  for (const version of versionFirmwares) {
+    await DeviceFirmware.deleteMany({
+      firmwareVersionId: version._id,
+    });
+
+    // Delete
+    await Upload.deleteObject(version.filename);
+
+    await FirmwareVersion.deleteOne({ _id: version._id });
+  }
+
+  await Firmware.deleteOne({ _id: req.params.firmwareId });
+  
   res.status(204).json();
 });
 
-// DELETE /api/firmwareVersion/:firmwareVersionId
+// DELETE /api/firmwareVersion/:firmwareVersionId (testing)
 exports.deleteVersion = catchAsync(async (req, res, next) => {
-  res.status(204).json();
+  if (!isValidObjectId(req.params.firmwareVersionId))
+    return next(new AppError("Invalid firmwareVersionId", 400));
+
+  const testFirmwareVersion = await FirmwareVersion.findById(
+    req.params.firmwareVersionId
+  );
+
+  if (!testFirmwareVersion)
+    return next(new AppError("firmwareVersion not found", 404));
+
+  await Upload.deleteObject(testFirmwareVersion.filename);
+
+  await FirmwareVersion.deleteOne({ _id: req.params.firmwareVersionId });
+
+  await DeviceFirmware.deleteMany({
+    firmwareVersionId: req.params.firmwareVersionId,
+  });
+
+  await res.status(204).json();
 });
 
 // PATCH /api/firmware/:firmwareId (testing)
@@ -241,10 +284,14 @@ exports.editFirmware = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// PATCH /api/firmwareVersion/:firmwareVersionId (developing)
+// PATCH /api/firmwareVersion/:firmwareVersionId (testing)
 exports.editVersion = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.parmas.firmwareVersionId))
     return next(new AppError("Invalid firmwareVersionId", 400));
+
+  const { versionName, gitUrl, versionDescription } = req.fields;
+  if (!req.files.file || !versionName)
+    return next(new AppError("Invalid input", 400));
 
   const testFirmwareVersion = await FirmwareVersion.findById(
     req.parmas.firmwareVersionId
@@ -252,8 +299,36 @@ exports.editVersion = catchAsync(async (req, res, next) => {
   if (!testFirmwareVersion)
     return next(new AppError("Firmware Version not found", 404));
 
+  // Delete old file
+  await Upload.deleteObject(testFirmwareVersion.filename);
 
+  // Create new Object
+  const { filename, url } = await Upload.putObject();
+  const filePath = req.files.file.path; // Get the path of the uploaded file
+  fs.readFile(filePath, async (err, fileData) => {
+    if (err) {
+      return res.status(500).json({ error: "File reading failed." });
+    }
+    await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": req.files.file.type,
+      },
+      body: fileData,
+    });
+  });
 
+  const updatedFirmwareVersion = await FirmwareVersion.findByIdAndUpdate(
+    req.parmas.firmwareVersionId,
+    {
+      name: versionName,
+      gitUrl,
+      description: versionDescription,
+      filename,
+      editedAt: Date.now(),
+      editedBy: req.user.id,
+    }
+  );
   res.status(204).json();
 });
 
@@ -269,14 +344,20 @@ exports.getVersionDetail = catchAsync(async (req, res, next) => {
   if (!testFirmwareVersion)
     return next(new AppError("Firmware Version not found", 404));
   console.log(testFirmwareVersion.createdBy);
-  const user = await User.findById(testFirmwareVersion.createdBy);
+  const user = await User.findById(
+    testFirmwareVersion.editedBy
+      ? testFirmwareVersion.editedBy
+      : testFirmwareVersion.createdBy
+  );
   if (!user) return new AppError("User not found", 404);
 
   const formatOutput = {
     id: testFirmwareVersion._id,
     name: testFirmwareVersion.name,
     description: testFirmwareVersion.description,
-    lastUpdate: testFirmwareVersion.createdAt,
+    lastUpdate: testFirmwareVersion.editedAt
+      ? testFirmwareVersion.editedAt
+      : testFirmwareVersion.createdAt,
     updatedBy: user.name,
     file: process.env.AWS_S3_URL + testFirmwareVersion.filename,
   };
