@@ -32,3 +32,12 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
+// GET /api/devicePhase/:devicePhaseId/message
+exports.getMessageDevice = catchAsync(async (req, res, next) => {
+  res.status(200).json();
+});
+
+// GET /api/message/:messageId
+exports.getMessageDetail = catchAsync(async (req, res, next) => {
+  res.status(200).json();
+});

@@ -60,6 +60,8 @@ exports.getFirmware = catchAsync(async (req, res, next) => {
         _id: 0,
         name: 1,
         type: 1,
+        createdAt: 1,
+        editedAt: 1,
       },
     },
   ]);
@@ -68,7 +70,14 @@ exports.getFirmware = catchAsync(async (req, res, next) => {
     const firmwareVersions = await FirmwareVersion.find({
       firmwareId: firmware.id,
     }).sort({ createdAt: -1 });
-    firmware.lastUpdate = firmwareVersions[0].createdAt;
+    // console.log(firmware);
+    if (firmwareVersions.length === 0) {
+      firmware.lastUpdate = firmware.editedAt
+        ? firmware.editedAt
+        : firmware.createdAt;
+    } else {
+      firmware.lastUpdate = firmwareVersions[0].createdAt;
+    }
   }
 
   res.status(200).json({
@@ -239,7 +248,7 @@ exports.deleteFirmware = catchAsync(async (req, res, next) => {
   }
 
   await Firmware.deleteOne({ _id: req.params.firmwareId });
-  
+
   res.status(204).json();
 });
 

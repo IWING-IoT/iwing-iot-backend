@@ -2,6 +2,7 @@ const express = require("express");
 
 const devicePhaseController = require("./../controllers/devicePhaseController");
 const authController = require("./../controllers/authController");
+const messageController = require("./../controllers/messageController");
 
 const router = express.Router();
 
@@ -45,6 +46,12 @@ router.patch(
   "/:devicePhaseId",
   authController.protect,
   devicePhaseController.editDevice
+);
+
+router.get(
+  "/:devicePhaseId/message",
+  authController.protect,
+  messageController.getMessageDevice
 );
 
 module.exports = router;
