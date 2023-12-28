@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const formidableMiddleware = require("express-formidable");
+const arrayTransform = require("./middlewares/arrayTransform");
 
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./utils/errorHandler");
@@ -32,6 +33,7 @@ app.use(formidableMiddleware());
 
 app.use(morgan("dev"));
 app.use(cors());
+app.use(arrayTransform);
 
 app.use("/api/admin", adminRouter);
 app.use("/api/user", userRouter);

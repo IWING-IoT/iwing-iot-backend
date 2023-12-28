@@ -23,7 +23,6 @@ const compareId = (id1, id2) => {
   return id1.toString() === id2.toString();
 };
 
-
 // POST /api/project/:projectId/collaborator (finished)
 exports.createCollaborator = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;

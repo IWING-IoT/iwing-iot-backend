@@ -87,8 +87,6 @@ exports.createPhase = catchAsync(async (req, res, next) => {
     dataType: "Number",
   });
 
-  
-
   res.status(201).json();
 });
 
@@ -125,14 +123,29 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
   if (req.fields.isActive)
     return next(new AppError("You cannot change phase to active", 400));
 
-  const updatedPhase = await Phase.findOneAndUpdate(
-    { _id: req.params.phaseId },
-    {
-      isActive: req.fields.isActive,
-      editedAt: Date.now(),
-      editedBy: req.user._id,
-    }
-  );
+  if (req.fields.isActive) {
+    // กู้คืน
+    const updatedPhase = await Phase.findOneAndUpdate(
+      { _id: req.params.phaseId },
+      {
+        isActive: true,
+        editedAt: Date.now(),
+        editedBy: req.user._id,
+        endedAt: null,
+      }
+    );
+  } else {
+    // Archived
+    const updatedPhase = await Phase.findOneAndUpdate(
+      { _id: req.params.phaseId },
+      {
+        isActive: false,
+        editedAt: Date.now(),
+        editedBy: req.user._id,
+        endedAt: Date.now(),
+      }
+    );
+  }
 
   res.status(204).json();
 });
@@ -216,6 +229,10 @@ exports.getInfo = catchAsync(async (req, res, next) => {
 
   if (!permission) return next(new AppError("Permission not found", 404));
 
+  // ถ้า project archived แล้วให้ส่ง isProjectArchived
+
+  if (project.isArchived) {
+  }
   res.status(200).json({
     status: "success",
     data: {
@@ -224,6 +241,9 @@ exports.getInfo = catchAsync(async (req, res, next) => {
       ownerName: owner.name,
       startedAt: phase.startedAt,
       endedAt: phase.endedAt,
+      permission: permission.name,
+      isProjectArchived: project.isArchived,
+      isActive: phase.isActive,
       permission: permission.name,
     },
   });
