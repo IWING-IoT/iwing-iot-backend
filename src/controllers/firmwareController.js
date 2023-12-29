@@ -70,7 +70,7 @@ exports.getFirmware = catchAsync(async (req, res, next) => {
     const firmwareVersions = await FirmwareVersion.find({
       firmwareId: firmware.id,
     }).sort({ createdAt: -1 });
-    // console.log(firmware);
+
     if (firmwareVersions.length === 0) {
       firmware.lastUpdate = firmware.editedAt
         ? firmware.editedAt
@@ -125,6 +125,7 @@ exports.createFirmware = catchAsync(async (req, res, next) => {
     gitUrl,
     description: versionDescription,
     filename,
+    fileExtension: req.files.file.name.split(".")[1],
     createdAt: Date.now(),
     createdBy: req.user.id,
   });
@@ -216,6 +217,7 @@ exports.createVersion = catchAsync(async (req, res, next) => {
     gitUrl,
     description: versionDescription,
     filename,
+    fileExtension: req.files.file.name.split(".")[1],
     createdAt: Date.now(),
     createdBy: req.user.id,
   });
@@ -356,7 +358,7 @@ exports.getVersionDetail = catchAsync(async (req, res, next) => {
 
   if (!testFirmwareVersion)
     return next(new AppError("Firmware Version not found", 404));
-  console.log(testFirmwareVersion.createdBy);
+
   const user = await User.findById(
     testFirmwareVersion.editedBy
       ? testFirmwareVersion.editedBy

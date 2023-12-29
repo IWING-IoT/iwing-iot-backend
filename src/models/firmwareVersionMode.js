@@ -16,7 +16,10 @@ const firmwareVersionSchema = new mongoose.Schema({
     type: String,
     required: [true, "FirmwareVersion must has a filename"],
   },
-
+  fileExtension: {
+    type: String,
+    required: [true, "FirmwareVersion must has a fileExtension"],
+  },
   markdown: String,
   createdAt: Date,
   createdBy: {
