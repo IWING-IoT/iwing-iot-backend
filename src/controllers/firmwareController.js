@@ -175,6 +175,7 @@ exports.getVersions = catchAsync(async (req, res, next) => {
     data: {
       name: testFirmware.name,
       type: testFirmware.type,
+      description: testFirmware.description,
       versions: firmwareVersions,
     },
   });
