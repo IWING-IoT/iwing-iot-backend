@@ -73,7 +73,10 @@ exports.createCategory = catchAsync(async (req, res, next) => {
   if (!req.fields.name || !req.fields.mainAttribute)
     return next(new AppError("Invalid input", 400));
 
-  const testCategory = await Category.findOne({ name: req.fields.name });
+  const testCategory = await Category.findOne({
+    name: req.fields.name,
+    projectId: req.params.projectId,
+  });
   if (testCategory) return next(new AppError("Duplicate category name", 400));
 
   // Create category
@@ -452,6 +455,13 @@ exports.editCategory = catchAsync(async (req, res, next) => {
       .includes(req.fields.mainAttribute)
   )
     return next(new AppError("Duplicate Attribute Name", 400));
+
+  // Check duplicate category name
+  const testCategoryName = await Category.findOne({
+    name: req.fields.name,
+    projectId: req.params.projectId,
+  });
+  if (!testCategoryName) return next(new AppError("Duplicate category", 400));
   // Change metadata and mainAttribute
 
   const updatedCategory = await Category.findOneAndUpdate(
