@@ -375,6 +375,7 @@ exports.getVersionDetail = catchAsync(async (req, res, next) => {
       : testFirmwareVersion.createdAt,
     updatedBy: user.name,
     file: process.env.AWS_S3_URL + testFirmwareVersion.filename,
+    fileExtension: testFirmwareVersion.fileExtension,
   };
 
   res.status(200).json({
