@@ -172,7 +172,11 @@ exports.getVersions = catchAsync(async (req, res, next) => {
   }
   res.status(200).json({
     status: "success",
-    data: firmwareVersions,
+    data: {
+      name: testFirmware.name,
+      type: testFirmware.type,
+      versions: firmwareVersions,
+    },
   });
 });
 
