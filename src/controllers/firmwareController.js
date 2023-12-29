@@ -308,24 +308,28 @@ exports.editVersion = catchAsync(async (req, res, next) => {
   if (!testFirmwareVersion)
     return next(new AppError("Firmware Version not found", 404));
 
-  // Delete old file
-  await Upload.deleteObject(testFirmwareVersion.filename);
+  if (req.files.file) {
+    // New version file
 
-  // Create new Object
-  const { filename, url } = await Upload.putObject();
-  const filePath = req.files.file.path; // Get the path of the uploaded file
-  fs.readFile(filePath, async (err, fileData) => {
-    if (err) {
-      return res.status(500).json({ error: "File reading failed." });
-    }
-    await fetch(url, {
-      method: "PUT",
-      headers: {
-        "Content-Type": req.files.file.type,
-      },
-      body: fileData,
+    // Delete old file
+    await Upload.deleteObject(testFirmwareVersion.filename);
+
+    // Create new Object
+    const { filename, url } = await Upload.putObject();
+    const filePath = req.files.file.path; // Get the path of the uploaded file
+    fs.readFile(filePath, async (err, fileData) => {
+      if (err) {
+        return res.status(500).json({ error: "File reading failed." });
+      }
+      await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": req.files.file.type,
+        },
+        body: fileData,
+      });
     });
-  });
+  }
 
   const updatedFirmwareVersion = await FirmwareVersion.findByIdAndUpdate(
     req.parmas.firmwareVersionId,
@@ -333,7 +337,7 @@ exports.editVersion = catchAsync(async (req, res, next) => {
       name: versionName,
       gitUrl,
       description: versionDescription,
-      filename,
+      filename: req.files.file ? filename : testFirmwareVersion.filename,
       editedAt: Date.now(),
       editedBy: req.user.id,
     }
