@@ -55,6 +55,10 @@ app.use("/api/message", messageRouter);
 
 app.use(globalErrorHandler);
 
+app.get("/*", (req, res) => {
+  res.send("Hello World");
+});
+
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server`, 404));
 });
