@@ -176,7 +176,6 @@ exports.getCategories = catchAsync(async (req, res, next) => {
 exports.getCategoryEntry = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
-
   const testCategory = await Category.findById(req.params.categoryId);
   if (!testCategory) return next(new AppError("Category not found", 404));
 
@@ -383,7 +382,6 @@ exports.createEntry = catchAsync(async (req, res, next) => {
 exports.getCategoryMainAttribute = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.categoryId))
     return next(new AppError("Invalid categoryId", 400));
-
   const testCategory = await Category.findById(req.params.categoryId);
   if (!testCategory) return next(new AppError("Category not found", 404));
 
@@ -585,7 +583,7 @@ exports.editEntry = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid entryId"));
   const testEntry = await CategoryEntity.findById(req.params.entryId);
   if (!testEntry) return next(new AppError("Entry not found", 404));
-  console.log(req.fields);
+
   for (const entry of Object.keys(req.fields)) {
     const attribute = await Attribute.findOne({
       name: entry,
@@ -621,10 +619,10 @@ exports.deleteCategory = catchAsync(async (req, res, next) => {
 
   // การลบ category
   // ลบ parentCategory
-  const categoryContainParent = await Attribute.aggregate([
+  const categoryContainParents = await Attribute.aggregate([
     {
       $match: {
-        parentCategoryId: new mongoose.Types.ObjectId(testCategory._id),
+        parentCategoryId: new mongoose.Types.ObjectId(req.params.categoryId),
       },
     },
     {
@@ -638,20 +636,46 @@ exports.deleteCategory = catchAsync(async (req, res, next) => {
     },
   ]);
 
-  // run เลข position ใน attribute ใหม่ของทุก category
+  for (const categoryContainParent of categoryContainParents) {
+    const attributes = await Attribute.find({
+      categoryId: categoryContainParent._id,
+    });
+    let i = 0;
+    for (const attribute of attributes) {
+      // Find deleted parent attribute and run new position number
+
+      if (
+        attribute.parentCategoryId &&
+        compareId(req.params.categoryId, attribute.parentCategoryId)
+      ) {
+        // Delete Attribute Value model
+        await AttributeValue.deleteMany({ attributeId: attribute._id });
+
+        // Remove attribute
+        await Attribute.deleteOne({ _id: attribute._id });
+
+        continue;
+      }
+      attribute.position = i;
+      attribute.save();
+      i++;
+    }
+  }
+
+  // ลบ entry ของ category ตัวมันเอง
   const entries = await CategoryEntity.find({
     categoryId: req.params.categoryId,
   });
 
   // AttributeValue
 
-  // for (const entry of entries) {
-  //   await AttributeValue.deleteMany({ categoryEntityId: entry._id });
-  //   await CategoryEntity.deleteOne({ _id: entry._id });
-  // }
+  for (const entry of entries) {
+    await AttributeValue.deleteMany({ categoryEntityId: entry._id });
+    await CategoryEntity.deleteOne({ _id: entry._id });
+  }
 
-  // await Attribute.deleteMany({ categoryId: req.params.categoryId });
-  // await Category.deleteOne({ _id: req.params.categoryId });
+  await Attribute.deleteMany({ categoryId: req.params.categoryId });
+  await Category.deleteOne({ _id: req.params.categoryId });
 
   res.status(204).json();
 });
