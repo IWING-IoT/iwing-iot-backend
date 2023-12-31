@@ -189,7 +189,7 @@ exports.createVersion = catchAsync(async (req, res, next) => {
   const testFirmware = await Firmware.findById(req.params.firmwareId);
   if (!testFirmware) return next(new AppError("Firmware not found", 404));
 
-  const { versionName, gitUrl, versionDescription } = req.fields;
+  const { versionName, gitUrl, versionDescription, markdown } = req.fields;
   if (!req.files.file || !versionName)
     return next(new AppError("Invalid input", 400));
 
@@ -223,6 +223,7 @@ exports.createVersion = catchAsync(async (req, res, next) => {
     description: versionDescription,
     filename,
     fileExtension: req.files.file.name.split(".")[1],
+    markdown,
     createdAt: Date.now(),
     createdBy: req.user.id,
   });
@@ -306,7 +307,7 @@ exports.editVersion = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.firmwareVersionId))
     return next(new AppError("Invalid firmwareVersionId", 400));
 
-  const { versionName, gitUrl, versionDescription } = req.fields;
+  const { versionName, gitUrl, versionDescription, markdown } = req.fields;
   if (!versionName) return next(new AppError("Invalid input", 400));
 
   const testFirmwareVersion = await FirmwareVersion.findById(
@@ -345,6 +346,7 @@ exports.editVersion = catchAsync(async (req, res, next) => {
       gitUrl,
       description: versionDescription,
       filename: req.files.file ? filename : testFirmwareVersion.filename,
+      markdown,
       editedAt: Date.now(),
       editedBy: req.user.id,
     }
