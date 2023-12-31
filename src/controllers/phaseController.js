@@ -87,6 +87,12 @@ exports.createPhase = catchAsync(async (req, res, next) => {
     dataType: "Number",
   });
 
+  const dateApi = await PhaseApi.create({
+    phaseId: newPhase._id,
+    name: "createdAt",
+    dataType: "Date",
+  });
+
   res.status(201).json();
 });
 

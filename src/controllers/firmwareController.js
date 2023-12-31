@@ -297,20 +297,20 @@ exports.editFirmware = catchAsync(async (req, res, next) => {
     editedBy: req.user.id,
   });
 
+  console.log(req.fields);
   res.status(204).json();
 });
 
 // PATCH /api/firmwareVersion/:firmwareVersionId (testing)
 exports.editVersion = catchAsync(async (req, res, next) => {
-  if (!isValidObjectId(req.parmas.firmwareVersionId))
+  if (!isValidObjectId(req.params.firmwareVersionId))
     return next(new AppError("Invalid firmwareVersionId", 400));
 
   const { versionName, gitUrl, versionDescription } = req.fields;
-  if (!req.files.file || !versionName)
-    return next(new AppError("Invalid input", 400));
+  if (!versionName) return next(new AppError("Invalid input", 400));
 
   const testFirmwareVersion = await FirmwareVersion.findById(
-    req.parmas.firmwareVersionId
+    req.params.firmwareVersionId
   );
   if (!testFirmwareVersion)
     return next(new AppError("Firmware Version not found", 404));
@@ -339,7 +339,7 @@ exports.editVersion = catchAsync(async (req, res, next) => {
   }
 
   const updatedFirmwareVersion = await FirmwareVersion.findByIdAndUpdate(
-    req.parmas.firmwareVersionId,
+    req.params.firmwareVersionId,
     {
       name: versionName,
       gitUrl,

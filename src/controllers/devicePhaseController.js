@@ -11,6 +11,7 @@ const DeviceType = require("../models/deviceTypeModel");
 const CategoryEntity = require("../models/categoryEntityModel");
 const Attribute = require("../models/attributeModel");
 const AttributeValue = require("../models/attributeValueModel");
+const User = require("../models/userModel");
 
 const { sign } = require("crypto");
 const jwt = require("jsonwebtoken");
@@ -73,7 +74,8 @@ exports.addDevice = catchAsync(async (req, res, next) => {
     let devicePhaseCreate = await DevicePhase.create({
       deviceId: testDevice._id,
       phaseId: req.params.phaseId,
-      alias: req.fields.alias && req.fields.alias !== "" ? req.fields.alias : "",
+      alias:
+        req.fields.alias && req.fields.alias !== "" ? req.fields.alias : "",
       status: "inactive",
       createdAt: Date.now(),
       createdBy: req.user.id,
@@ -204,7 +206,7 @@ exports.getDevice = catchAsync(async (req, res, next) => {
 
 // PATCH /api/devicePhase/:devicePhaseId/status (testing)
 exports.deviceStatus = catchAsync(async (req, res, next) => {
-  if (!isValidObjectId(req.parmas.devicePhaseId))
+  if (!isValidObjectId(req.params.devicePhaseId))
     return next(new AppError("Invalid devicePhaseId", 400));
 
   const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
@@ -265,19 +267,23 @@ exports.removeDevice = catchAsync(async (req, res, next) => {
 exports.generateJwt = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.devicePhaseId))
     return next(new AppError("Invalid devicePhaseId", 400));
+  console.log(`req.params.devicePhaseId : ${req.params.devicePhaseId}`);
 
   const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
 
   const testPhase = await Phase.findById(testDevicePhase.phaseId);
   if (!testPhase) return next(new AppError("Phase not found", 404));
+  console.log(testPhase._id);
+
   await checkCollab(
     next,
     testPhase.projectId,
     req.user.id,
-    "You do not have permission to genereate new jwt.",
+    "You do not have permission get device.",
     "can_edit",
-    "owner"
+    "owner",
+    "can_view"
   );
 
   const updateDevicePhase = await DevicePhase.findByIdAndUpdate(
