@@ -308,7 +308,6 @@ exports.editVersion = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid firmwareVersionId", 400));
 
   const { versionName, gitUrl, versionDescription, markdown } = req.fields;
-  if (!versionName) return next(new AppError("Invalid input", 400));
 
   const testFirmwareVersion = await FirmwareVersion.findById(
     req.params.firmwareVersionId
