@@ -17,6 +17,22 @@ const {
   ListBucketInventoryConfigurationsOutputFilterSensitiveLog,
 } = require("@aws-sdk/client-s3");
 
+const defaultMarkdown =
+  '# Sample Markdown Title \
+\
+This is a sample piece of markdown text to illustrate how markdown works. You can add **bold** text, *italicized* text, and even `inline code` snippets. \
+\
+## Subheading \
+- List item one \
+- List item two \
+- List item three \
+\
+```python \
+# Here\'s a code block \
+print("Hello, Markdown!") \
+``` \
+';
+
 /**
  * @desc check wheather input id is valid mongodb objectID
  * @param {String} id that want to check
@@ -189,7 +205,7 @@ exports.createVersion = catchAsync(async (req, res, next) => {
   const testFirmware = await Firmware.findById(req.params.firmwareId);
   if (!testFirmware) return next(new AppError("Firmware not found", 404));
 
-  const { versionName, gitUrl, versionDescription, markdown } = req.fields;
+  const { versionName, gitUrl, versionDescription } = req.fields;
   if (!req.files.file || !versionName)
     return next(new AppError("Invalid input", 400));
 
@@ -223,7 +239,7 @@ exports.createVersion = catchAsync(async (req, res, next) => {
     description: versionDescription,
     filename,
     fileExtension: req.files.file.name.split(".")[1],
-    markdown,
+    markdown: defaultMarkdown,
     createdAt: Date.now(),
     createdBy: req.user.id,
   });
