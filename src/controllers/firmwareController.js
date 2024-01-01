@@ -30,7 +30,7 @@ This is a sample piece of markdown text to illustrate how markdown works. You ca
 ```python\n\
 # Here\'s a code block\n\
 print("Hello, Markdown!")\n\
-```n\
+```\n\
 ';
 
 /**
