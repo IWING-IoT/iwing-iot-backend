@@ -118,7 +118,7 @@ exports.getDevice = catchAsync(async (req, res, next) => {
   );
 
   const match = {};
-  if (req.query.type) {
+  if (req.query.type && !req.query.type !== "all") {
     match[`deviceType.name`] = req.query.type;
   }
 
