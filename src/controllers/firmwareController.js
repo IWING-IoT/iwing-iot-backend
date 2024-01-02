@@ -88,7 +88,7 @@ exports.getFirmware = catchAsync(async (req, res, next) => {
     }).sort({ createdAt: -1 });
 
     if (firmwareVersions.length === 0) {
-      firmware.lastUpdate = firmware.editedAt
+      firmware.lastUpdate = firmware.createdAt
         ? firmware.editedAt
         : firmware.createdAt;
     } else {
@@ -392,9 +392,7 @@ exports.getVersionDetail = catchAsync(async (req, res, next) => {
     id: testFirmwareVersion._id,
     name: testFirmwareVersion.name,
     description: testFirmwareVersion.description,
-    lastUpdate: testFirmwareVersion.editedAt
-      ? testFirmwareVersion.editedAt
-      : testFirmwareVersion.createdAt,
+    lastUpdate: testFirmwareVersion.createdAt,
     updatedBy: user.name,
     file: process.env.AWS_S3_URL + testFirmwareVersion.filename,
     fileExtension: testFirmwareVersion.fileExtension,
