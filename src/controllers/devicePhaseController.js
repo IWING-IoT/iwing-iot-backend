@@ -282,8 +282,7 @@ exports.generateJwt = catchAsync(async (req, res, next) => {
     req.user.id,
     "You do not have permission get device.",
     "can_edit",
-    "owner",
-    "can_view"
+    "owner"
   );
 
   const updateDevicePhase = await DevicePhase.findByIdAndUpdate(
@@ -300,6 +299,27 @@ exports.generateJwt = catchAsync(async (req, res, next) => {
 
 // GET /api/devicePhase/:devicePhaseId
 exports.getDeviceInfo = catchAsync(async (req, res, next) => {
+  const dataPointX = 20;
+  if (!isValidObjectId(req.params.devicePhaseId))
+    return next(new AppError("Invalid devicePhaseId", 400));
+
+  const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
+  if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
+
+  const formatOutput = {
+    name: testDevicePhase.name,
+    alias: testDevicePhase.alias,
+  };
+
+  // Temperature
+  // Get data point
+  const xTemperature = [];
+  const yTemperature = [];
+
+  const messages = await Message.find({
+    "metadata.devicePhaseId": req.params.devicePhaseId,
+  }).sort({ timestamp: -1 });
+
   res.status(200).json();
 });
 

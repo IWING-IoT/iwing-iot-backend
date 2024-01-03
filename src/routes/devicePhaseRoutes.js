@@ -42,7 +42,7 @@ router.get(
   devicePhaseController.getDeviceFirmware
 );
 
-router.patch(
+router.put(
   "/:devicePhaseId",
   authController.protect,
   devicePhaseController.editDevice

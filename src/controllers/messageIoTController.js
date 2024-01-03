@@ -23,7 +23,6 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
   }
 
   if (!token) {
-    console.log("Fail");
     return next(
       new AppError("You are not logged in, please log in to gain access.", 401)
     );
@@ -57,11 +56,11 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
   await DevicePhase.findByIdAndUpdate(decoded.devicePhaseId, {
     messageReceive: ++testDevicePhase.messageReceive,
     lastConnection: Date.now(),
-    temperature: formatData[`${temperature}`]
-      ? formatData[`${temperature}`]
+    temperature: formatData[`temperature`]
+      ? formatData[`temperature`]
       : testDevicePhase.temperature,
-    battery: formatData[`${battery}`]
-      ? formatData[`${battery}`]
+    battery: formatData[`battery`]
+      ? formatData[`battery`]
       : testDevicePhase.battery,
   });
   res.status(201).json();
@@ -79,7 +78,6 @@ exports.createGateway = catchAsync(async (req, res, next) => {
   }
 
   if (!token) {
-    console.log("Fail");
     return next(
       new AppError("You are not logged in, please log in to gain access.", 401)
     );

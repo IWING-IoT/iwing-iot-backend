@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const AppError = require("./../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 const checkCollab = require("./../utils/checkCollab");
+const DevicePhase = require("../models/devicePhaseModel");
+const Message = require("../models/messageModel");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -32,12 +34,58 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
-// GET /api/devicePhase/:devicePhaseId/message
+// GET /api/devicePhase/:devicePhaseId/message (testing)
 exports.getMessageDevice = catchAsync(async (req, res, next) => {
-  res.status(200).json();
+  const limit = req.query.limit * 1 || 10;
+  const page = req.query.page * 1 || 1;
+  const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
+  if (!testDevicePhase) return next(new AppError("Invalid devicePhaseId", 400));
+
+  const match = {
+    "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+      req.params.devicePhaseId
+    ),
+  };
+
+  if (req.query.dateStart) {
+    match.timestamp = {
+      $gte: new Date(req.query.dateStart),
+    };
+  }
+
+  if (req.query.dateStop) {
+    match.timestamp = {
+      $lte: new Date(req.query.dateStop),
+    };
+  }
+  const messages = await Message.aggregate([
+    {
+      $match: match,
+    },
+    {
+      $sort: {
+        timestamp: -1,
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    status: "success",
+    data: paginate(messages, limit, page),
+  });
 });
 
-// GET /api/message/:messageId
+// GET /api/message/:messageId (testing)
 exports.getMessageDetail = catchAsync(async (req, res, next) => {
-  res.status(200).json();
+  if (!isValidObjectId(req.params.messageId)) {
+    return next(new AppError("Invalid messageId", 400));
+  }
+
+  const testMessage = await Message.findById(req.params.messageId);
+  if (!testMessage) return next(new AppError("Invalid messageId", 400));
+
+  res.status(200).json({
+    status: "success",
+    data: testMessage,
+  });
 });
