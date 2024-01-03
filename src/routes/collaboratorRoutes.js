@@ -17,5 +17,10 @@ router.delete(
   collaboratorController.deleteCollaborator
 );
 
+router.patch(
+  "/:collaboratorId/transferOwner",
+  authController.protect,
+  collaboratorController.transferOwner
+);
 
 module.exports = router;
