@@ -216,7 +216,7 @@ exports.deleteCollaborator = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// GET /project/:projectId/collaborator (finished)
+// GET /api/project/:projectId/collaborator (finished)
 exports.getCollaborator = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;
 
@@ -247,4 +247,47 @@ exports.getCollaborator = catchAsync(async (req, res, next) => {
     status: "success",
     data: formattedCollaborators,
   });
+});
+
+// PATCH /api/collaborator/:collaboratorId/transferOwner (testing)
+exports.transferOwner = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.collaboratorId))
+    return next(new AppError("Invalid collaboratorId", 400));
+
+  const testCollaborator = await Collaborator.findById(
+    req.params.collaboratorId
+  );
+  if (!testCollaborator)
+    return next(new AppError("Collaborator not exist", 404));
+
+  await checkCollab(
+    next,
+    testCollaborator.projectId,
+    req.user._id,
+    "You do not have edit to transfer owner.",
+    "owner"
+  );
+
+  // Change collaborator permission to owner
+  const ownerPermssion = await Permission.findOne({ name: "owner" });
+  await Collaborator.findByIdAndUpdate(req.params.collaboratorId, {
+    permissionId: ownerPermssion._id,
+  });
+
+  // Change project owner to can_edit
+  const canEditPermission = await Permission.findOne({ name: "can_edit" });
+  await Project.findByIdAndUpdate(testCollaborator.projectId, {
+    owner: testCollaborator.userId,
+  });
+
+  await Collaborator.findOneAndUpdate(
+    {
+      userId: req.user.id,
+    },
+    {
+      permissionId: canEditPermission._id,
+    }
+  );
+
+  res.status(204).json();
 });
