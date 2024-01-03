@@ -459,7 +459,8 @@ exports.editCategory = catchAsync(async (req, res, next) => {
     name: req.fields.name,
     projectId: req.params.projectId,
   });
-  if (!testCategoryName) return next(new AppError("Duplicate category", 400));
+  console.log(testCategoryName);
+  if (testCategoryName) return next(new AppError("Duplicate category", 400));
   // Change metadata and mainAttribute
 
   const updatedCategory = await Category.findOneAndUpdate(
