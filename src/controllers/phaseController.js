@@ -302,3 +302,15 @@ exports.getPhases = catchAsync(async (req, res, next) => {
     data: phases,
   });
 });
+
+exportd.editPhase = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.phaseId))
+    return next(new AppError("Invalid phaseId", 400));
+
+  const phase = await Phase.findById(req.params.phaseId);
+  if (!phase) return next(new AppError("Phase not found", 404));
+
+  await Phase.findByIdAndUpdate(req.params.phaseId, { ...req.fields });
+
+  res.status(204).json();
+});
