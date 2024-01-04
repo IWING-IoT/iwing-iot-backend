@@ -259,20 +259,27 @@ exports.transferOwner = catchAsync(async (req, res, next) => {
   );
   if (!testCollaborator)
     return next(new AppError("Collaborator not exist", 404));
+  const testOldOwner = await Collaborator.findOne({ userId: req.user.id });
+  const testOldOwenrPermission = await Permission.findById(
+    testOldOwner.permissionId
+  );
 
   await checkCollab(
     next,
     testCollaborator.projectId,
-    req.user._id,
+    req.user.id,
     "You do not have edit to transfer owner.",
     "owner"
   );
 
   // Change collaborator permission to owner
   const ownerPermssion = await Permission.findOne({ name: "owner" });
-  await Collaborator.findByIdAndUpdate(req.params.collaboratorId, {
-    permissionId: ownerPermssion._id,
-  });
+  const newOwner = await Collaborator.findByIdAndUpdate(
+    req.params.collaboratorId,
+    {
+      permissionId: ownerPermssion._id,
+    }
+  );
 
   // Change project owner to can_edit
   const canEditPermission = await Permission.findOne({ name: "can_edit" });
@@ -281,13 +288,13 @@ exports.transferOwner = catchAsync(async (req, res, next) => {
   });
 
   await Collaborator.findOneAndUpdate(
-    {
-      userId: req.user.id,
-    },
+    { userId: req.user.id, projectId: testCollaborator.projectId },
     {
       permissionId: canEditPermission._id,
     }
   );
+
+  const oldOnwer = await Collaborator.findOne({ userId: req.user.id });
 
   res.status(204).json();
 });

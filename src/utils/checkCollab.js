@@ -15,7 +15,6 @@ module.exports = async (next, projectId, userId, message, ...permission) => {
     userId,
   });
 
-  console.log(projectCollab);
   if (!projectCollab)
     next(
       new AppError("You do not have permission to access this project.", 403)
@@ -25,6 +24,8 @@ module.exports = async (next, projectId, userId, message, ...permission) => {
   let checkPermission = false;
 
   for (const permission of permissionIds) {
+    console.log(projectCollab);
+    console.log(permission._id);
     if (compareId(projectCollab.permissionId, permission._id)) {
       checkPermission = true;
     }
