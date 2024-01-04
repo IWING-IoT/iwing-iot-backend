@@ -239,7 +239,6 @@ exports.createVersion = catchAsync(async (req, res, next) => {
     description: versionDescription,
     filename,
     fileExtension: req.files.file.name.split(".")[1],
-    markdown: defaultMarkdown,
     createdAt: Date.now(),
     createdBy: req.user.id,
   });
