@@ -1,5 +1,20 @@
 const mongoose = require("mongoose");
 
+const defaultMarkdown =
+  '# Sample Markdown Title\n \
+\n\
+This is a sample piece of markdown text to illustrate how markdown works. You can add **bold** text, *italicized* text, and even `inline code` snippets.\n\
+\n\
+## Subheading\n\
+- List item one\n\
+- List item two\n\
+- List item three\n\
+\n\
+```python\n\
+# Here\'s a code block\n\
+print("Hello, Markdown!")\n\
+```\n\
+';
 const projectSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -23,7 +38,10 @@ const projectSchema = new mongoose.Schema({
     type: Date,
     required: [true, "A project must has a started date"],
   },
-  description: String,
+  description: {
+    type: String,
+    default: defaultMarkdown,
+  },
   endedAt: Date,
   createdAt: Date,
   isArchived: {
