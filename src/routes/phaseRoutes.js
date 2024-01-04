@@ -13,14 +13,13 @@ router.patch(
   phaseController.phaseStatus
 );
 
-router.patch(
+router.delete(
   "/:phaseId/deleted",
   authController.protect,
   phaseController.deleted
 );
 
 router.get("/:phaseId", authController.protect, phaseController.getInfo);
-
 
 // PhaseApi API
 router.get(
@@ -46,7 +45,6 @@ router.post(
   authController.protect,
   phaseApiController.copy
 );
-
 
 // Device API
 router.post(
