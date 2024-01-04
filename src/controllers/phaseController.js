@@ -291,6 +291,7 @@ exports.getPhases = catchAsync(async (req, res, next) => {
         isActive: "$isActive",
         startedAt: "$startedAt",
         endedAt: "$endedAt",
+        description: "$description",
       },
     },
     {
