@@ -99,6 +99,7 @@ exports.getProjects = catchAsync(async (req, res, next) => {
         startedAt: "$project.startedAt",
         createdAt: "$project.createdAt",
         isArchived: "$project.isArchived",
+        endedAt: "$project.endedAt",
       },
     },
     {
@@ -271,7 +272,7 @@ exports.archived = catchAsync(async (req, res, next) => {
 
   // Update all phase to inactive
   const updatedPhase = await Phase.updateMany(
-    { projectId: req.params.projectId, isActive: true },
+    { projectId: req.params.projectId },
     {
       isActive: false,
       editedBy: req.user._id,
