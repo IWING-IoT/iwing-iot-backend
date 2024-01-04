@@ -303,7 +303,7 @@ exports.getPhases = catchAsync(async (req, res, next) => {
   });
 });
 
-exportd.editPhase = catchAsync(async (req, res, next) => {
+exports.editPhase = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
     return next(new AppError("Invalid phaseId", 400));
 
