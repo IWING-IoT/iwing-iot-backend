@@ -259,10 +259,6 @@ exports.transferOwner = catchAsync(async (req, res, next) => {
   );
   if (!testCollaborator)
     return next(new AppError("Collaborator not exist", 404));
-  const testOldOwner = await Collaborator.findOne({ userId: req.user.id });
-  const testOldOwenrPermission = await Permission.findById(
-    testOldOwner.permissionId
-  );
 
   await checkCollab(
     next,

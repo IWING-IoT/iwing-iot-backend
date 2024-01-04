@@ -200,18 +200,13 @@ exports.getInfo = catchAsync(async (req, res, next) => {
 
   const phase = await Phase.findOne({ _id: req.params.phaseId });
 
-  // console.log(
-  //   await Phase.findOne({ _id: req.params.phaseId }).explain("executionStats")
-  // );
-  console.log(phase);
-
   if (!phase) return next(new AppError("Phase not found", 404));
   if (phase.isDeleted) return next(new AppError("Phase has been deleted", 400));
 
   const project = await Project.findById(phase.projectId);
   if (!project) return next(new AppError("Project not found", 404));
 
-  const owner = await User.findById(project.owner);
+  const owner = await User.findById(phase.createdBy);
 
   // Get phase permission
   const collaborator = await Collaborator.findOne({
@@ -222,7 +217,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
   await checkCollab(
     next,
     project._id,
-    req.user._id,
+    req.user.id,
     "You cannot access this phase.",
     "owner",
     "can_edit",
