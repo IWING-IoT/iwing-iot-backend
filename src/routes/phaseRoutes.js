@@ -13,11 +13,7 @@ router.patch(
   phaseController.phaseStatus
 );
 
-router.delete(
-  "/:phaseId/deleted",
-  authController.protect,
-  phaseController.deleted
-);
+router.delete("/:phaseId", authController.protect, phaseController.deleted);
 
 router.get("/:phaseId", authController.protect, phaseController.getInfo);
 
