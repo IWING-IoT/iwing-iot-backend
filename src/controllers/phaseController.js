@@ -53,7 +53,6 @@ exports.createPhase = catchAsync(async (req, res, next) => {
   const newPhase = await Phase.create({
     name: req.fields.name,
     startedAt: req.fields.startedAt || Date.now(),
-    description: req.fields.description || "",
     projectId: req.params.projectId,
     createdAt: Date.now(),
     createdBy: req.user._id,
