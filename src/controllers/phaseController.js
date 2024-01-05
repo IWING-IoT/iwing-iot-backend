@@ -246,6 +246,7 @@ exports.getInfo = catchAsync(async (req, res, next) => {
       isProjectArchived: project.isArchived,
       isActive: phase.isActive,
       permission: permission.name,
+      description: phase.description,
     },
   });
 });
@@ -291,7 +292,6 @@ exports.getPhases = catchAsync(async (req, res, next) => {
         isActive: "$isActive",
         startedAt: "$startedAt",
         endedAt: "$endedAt",
-        description: "$description",
       },
     },
     {
