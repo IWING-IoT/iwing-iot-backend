@@ -12,6 +12,7 @@ const CategoryEntity = require("../models/categoryEntityModel");
 const Attribute = require("../models/attributeModel");
 const AttributeValue = require("../models/attributeValueModel");
 const User = require("../models/userModel");
+const Message = require("../models/messageModel");
 
 const { sign } = require("crypto");
 const jwt = require("jsonwebtoken");
