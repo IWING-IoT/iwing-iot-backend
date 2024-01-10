@@ -91,11 +91,11 @@ exports.getMessageDetail = catchAsync(async (req, res, next) => {
 
   const testMessage = await Message.findById(req.params.messageId);
   if (!testMessage) return next(new AppError("Invalid messageId", 400));
+  testMessage.id = testMessage._id;
+  delete testMessage._id;
 
   res.status(200).json({
     status: "success",
-    data: {
-      id: testMessage._id,
-    },
+    data: testMessage,
   });
 });
