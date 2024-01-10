@@ -71,7 +71,15 @@ exports.getMessageDevice = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    data: paginate(messages, limit, page),
+    data: paginate(
+      messages.map((obj) => {
+        obj.id = obj._id;
+        delete obj._id;
+        return obj;
+      }),
+      limit,
+      page
+    ),
   });
 });
 
@@ -86,6 +94,10 @@ exports.getMessageDetail = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    data: testMessage,
+    data: testMessage.map((obj) => {
+      obj.id = obj._id;
+      delete obj._id;
+      return obj;
+    }),
   });
 });
