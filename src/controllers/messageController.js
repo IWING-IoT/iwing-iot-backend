@@ -94,10 +94,8 @@ exports.getMessageDetail = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    data: testMessage.map((obj) => {
-      obj.id = obj._id;
-      delete obj._id;
-      return obj;
-    }),
+    data: {
+      id: testMessage._id,
+    },
   });
 });
