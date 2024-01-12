@@ -60,10 +60,10 @@ exports.getDevices = catchAsync(async (req, res, next) => {
   // Query project that matching requirement
   if (!req.query.type || !req.query.status)
     return next(new AppError("Required query", 400));
-  const match = {
-    // isDeleted: false,
-    "device.name": req.query.type,
-  };
+  const match = {};
+  if (req.query.type !== "all") {
+    match["device.name"] = req.query.type;
+  }
 
   if (req.query.status !== "all") {
     match["status"] = req.query.status;

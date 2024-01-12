@@ -232,7 +232,7 @@ exports.example = catchAsync(async (req, res, next) => {
   });
 });
 
-// POST /api/phase/:phaseId/phaseApi/copy (testing)
+// POST /api/phase/:phaseId/phaseApi/copy (finished)
 exports.copy = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
     return next(new AppError("Invalid phaseId", 400));

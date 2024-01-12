@@ -113,11 +113,11 @@ exports.createGateway = catchAsync(async (req, res, next) => {
     await DevicePhase.findByIdAndUpdate(testNode._id, {
       messageReceive: ++testDevicePhase.messageReceive,
       lastConnection: Date.now(),
-      temperature: formatData[`${temperature}`]
-        ? formatData[`${temperature}`]
+      temperature: formatData[`temperature`]
+        ? formatData[`temperature`]
         : testDevicePhase.temperature,
-      battery: formatData[`${battery}`]
-        ? formatData[`${battery}`]
+      battery: formatData[`battery`]
+        ? formatData[`battery`]
         : testDevicePhase.battery,
     });
 

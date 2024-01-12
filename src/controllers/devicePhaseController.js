@@ -75,8 +75,7 @@ exports.addDevice = catchAsync(async (req, res, next) => {
     let devicePhaseCreate = await DevicePhase.create({
       deviceId: testDevice._id,
       phaseId: req.params.phaseId,
-      alias:
-        req.fields.alias && req.fields.alias !== "" ? req.fields.alias : "",
+      alias: device.alias && device.alias !== "" ? device.alias : "",
       status: "inactive",
       createdAt: Date.now(),
       createdBy: req.user.id,
