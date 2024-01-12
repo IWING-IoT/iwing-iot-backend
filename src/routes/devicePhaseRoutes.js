@@ -54,4 +54,10 @@ router.get(
   messageController.getMessageDevice
 );
 
+router.get(
+  "/:devicePhaseId/gateway",
+  authController.protect,
+  devicePhaseController.getNodesGateway
+);
+
 module.exports = router;

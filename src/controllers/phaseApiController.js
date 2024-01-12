@@ -239,7 +239,10 @@ exports.copy = catchAsync(async (req, res, next) => {
 
   const testPhase = await Phase.findById(req.params.phaseId);
   if (!testPhase) return next(new AppError("Phase not found", 404));
-  const phases = await Phase.find({ projectId: testPhase.projectId });
+  const phases = await Phase.find({
+    projectId: testPhase.projectId,
+    isDeleted: false,
+  });
   phases.sort(
     (a, b) => -a.startedAt.toString().localeCompare(b.startedAt.toString())
   );

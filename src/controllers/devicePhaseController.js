@@ -13,9 +13,13 @@ const Attribute = require("../models/attributeModel");
 const AttributeValue = require("../models/attributeValueModel");
 const User = require("../models/userModel");
 const Message = require("../models/messageModel");
+const Gateway = require("../models/gatewayModel");
 
 const { sign } = require("crypto");
 const jwt = require("jsonwebtoken");
+const {
+  ListBucketInventoryConfigurationsOutputFilterSensitiveLog,
+} = require("@aws-sdk/client-s3");
 
 const signToken = (objectSigned) => {
   return jwt.sign(objectSigned, process.env.JWT_SECRET, {
@@ -123,6 +127,11 @@ exports.getDevice = catchAsync(async (req, res, next) => {
   }
 
   const devicePhases = await DevicePhase.aggregate([
+    {
+      $match: {
+        phaseId: new mongoose.Types.ObjectId(req.params.phaseId),
+      },
+    },
     {
       $lookup: {
         from: "devices",
@@ -374,4 +383,125 @@ exports.editDevice = catchAsync(async (req, res, next) => {
     });
   }
   res.status(200).json();
+});
+
+// GET /api/devicePhase/:devicePhaseId/gateway (testing)
+exports.getNodesGateway = catchAsync(async (req, res, next) => {
+  // Check if devicePhaseId is valid
+  if (!isValidObjectId(req.params.devicePhaseId))
+    return next(new AppError("Invalid devicePhaseId", 400));
+  // Check if devicePhaseId is valid
+  const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
+  // If devicePhaseId is not found return error
+  if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
+
+  // Check if devicePhaseId is gateway
+  const testDevice = await Device.findById(testDevicePhase.deviceId);
+  if (!testDevice) return next(new AppError("Device not found", 404));
+  const testDeviceType = await DeviceType.findById(testDevice.type);
+  if (testDeviceType.name !== "gateway")
+    return next(new AppError("Device is not gateway", 400));
+
+  let nodesList = await Gateway.find(
+    {
+      gatewayId: testDevicePhase._id,
+    },
+    { nodeId: 1, _id: 0 }
+  );
+
+  nodesList = nodesList.map((node) => node.nodeId);
+  console.log(nodesList);
+
+  nodesList = nodesList.map((id) => new mongoose.Types.ObjectId(id));
+
+  const devicePhases = await DevicePhase.aggregate([
+    {
+      $match: {
+        phaseId: new mongoose.Types.ObjectId(testDevicePhase.phaseId),
+        _id: { $in: nodesList },
+      },
+    },
+    {
+      $lookup: {
+        from: "devices",
+        localField: "deviceId",
+        foreignField: "_id",
+        as: "device",
+      },
+    },
+    {
+      $unwind: "$device",
+    },
+    {
+      $lookup: {
+        from: "devicetypes",
+        localField: "device.type",
+        foreignField: "_id",
+        as: "deviceType",
+      },
+    },
+    {
+      $unwind: "$deviceType",
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        type: "$deviceType.name",
+        name: "$device.name",
+        alias: 1,
+        status: 1,
+        battery: 1,
+        temperature: 1,
+        lastConnection: 1,
+        jwt: 1,
+        categoryDataId: 1,
+      },
+    },
+  ]);
+
+  for (const device of devicePhases) {
+    device.lastCommunuication = device.lastConnection;
+    delete device.lastConnection;
+    // Update categoryDataId if enntiy not exist
+    const editedEntity = [];
+    const associate = [];
+
+    for (const entity of device.categoryDataId) {
+      const testEntity = await CategoryEntity.findById(entity);
+
+      if (testEntity) {
+        const mainAttribute = await Attribute.findOne({
+          position: 0,
+          categoryId: testEntity.categoryId,
+        });
+
+        const testmainAttributeValue = await AttributeValue.findOne({
+          attributeId: mainAttribute._id,
+          categoryEntityId: testEntity._id,
+        });
+        editedEntity.push(testEntity);
+        associate.push({
+          id: testEntity._id,
+          name: testmainAttributeValue.value,
+        });
+      }
+    }
+
+    await DevicePhase.findByIdAndUpdate(device.id, {
+      categoryDataId: editedEntity,
+    });
+    device.associate = associate;
+    delete device.categoryDataId;
+  }
+
+  // Sort devicePhases by lastCommunication
+  devicePhases.sort((a, b) => {
+    return b.lastCommunuication - a.lastCommunuication;
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: devicePhases,
+  });
 });
