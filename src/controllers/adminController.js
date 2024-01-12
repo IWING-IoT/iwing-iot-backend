@@ -25,6 +25,7 @@ const paginate = (array, page_size, page_number) => {
  */
 const isValidObjectId = (id) => {
   if (mongoose.isValidObjectId(id)) return true;
+
   return false;
 };
 

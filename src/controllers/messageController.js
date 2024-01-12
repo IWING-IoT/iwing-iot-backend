@@ -89,11 +89,14 @@ exports.getMessageDetail = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid messageId", 400));
   }
 
-  const testMessage = await Message.findById(req.params.messageId);
+  const testMessage = await Message.findById(req.params.messageId, {
+    __v: 0,
+    metadata: 0,
+    _id: 0,
+    timestamp: 0,
+  });
   if (!testMessage) return next(new AppError("Invalid messageId", 400));
-  testMessage.id = testMessage._id;
-  delete testMessage._id;
-
+  testMessage.latitude = 0;
   res.status(200).json({
     status: "success",
     data: testMessage,
