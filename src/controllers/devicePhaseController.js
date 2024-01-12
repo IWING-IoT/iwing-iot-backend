@@ -73,7 +73,7 @@ exports.addDevice = catchAsync(async (req, res, next) => {
   );
 
   for (const device of req.fields) {
-    const testDevice = await Device.findById(device.deviceId);
+    const testDevice = await Device.findById(device.id);
     if (!testDevice) continue;
     if (testDevice.status !== "available") continue;
     let devicePhaseCreate = await DevicePhase.create({
