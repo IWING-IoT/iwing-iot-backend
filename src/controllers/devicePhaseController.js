@@ -159,7 +159,7 @@ exports.getDevice = catchAsync(async (req, res, next) => {
         status: 1,
         battery: 1,
         temperature: 1,
-        lastCommunuication: 1,
+        lastConnection: 1,
         jwt: 1,
         categoryDataId: 1,
       },
@@ -167,6 +167,8 @@ exports.getDevice = catchAsync(async (req, res, next) => {
   ]);
 
   for (const device of devicePhases) {
+    device.lastCommunuication = device.lastConnection;
+    delete device.lastConnection;
     // Update categoryDataId if enntiy not exist
     const editedEntity = [];
     const associate = [];
