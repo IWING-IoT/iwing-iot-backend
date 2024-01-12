@@ -24,19 +24,10 @@ module.exports = async (next, projectId, userId, message, ...permission) => {
   let checkPermission = false;
 
   for (const permission of permissionIds) {
-    console.log(projectCollab);
-    console.log(permission._id);
     if (compareId(projectCollab.permissionId, permission._id)) {
       checkPermission = true;
     }
   }
-  // permissionIds.forEach((permission) => {
-  //   console.log(permission._id);
-
-  //   if ((compareId(permission._id), projectCollab.permissionId)) {
-  //     checkPermission = true;
-  //   }
-  // });
 
   if (!checkPermission) return next(new AppError(message, 401));
 };

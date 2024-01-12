@@ -155,7 +155,6 @@ exports.edited = catchAsync(async (req, res, next) => {
     },
   ]);
 
-  console.log(apis);
   for (const api of apis) {
     if (req.fields.name && api.name === req.fields.name) {
       return next(new AppError("Duplicate api name", 400));
@@ -240,10 +239,10 @@ exports.copy = catchAsync(async (req, res, next) => {
 
   const testPhase = await Phase.findById(req.params.phaseId);
   if (!testPhase) return next(new AppError("Phase not found", 404));
-
-  const phases = await Phase.find({ projectId: testPhase.projectId }).sort({
-    createdAt: -1,
-  });
+  const phases = await Phase.find({ projectId: testPhase.projectId });
+  phases.sort(
+    (a, b) => -a.startedAt.toString().localeCompare(b.startedAt.toString())
+  );
 
   if (phases.length === 1)
     return next(new AppError("There is no previous phase for copy", 400));
@@ -252,7 +251,7 @@ exports.copy = catchAsync(async (req, res, next) => {
 
   await PhaseApi.deleteMany({ phaseId: req.params.phaseId });
   const previousApis = await PhaseApi.find({ phaseId: phases[1]._id }).sort({
-    createdAt: 1,
+    startedAt: -1,
   });
   for (const previousApi of previousApis) {
     const createdPhaseApi = await PhaseApi.create({
