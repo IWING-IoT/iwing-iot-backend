@@ -317,21 +317,58 @@ exports.getDeviceInfo = catchAsync(async (req, res, next) => {
   const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
 
+  const testDevice = await Device.findById(testDevicePhase.deviceId);
+
   const formatOutput = {
-    name: testDevicePhase.name,
+    name: testDevice.name,
     alias: testDevicePhase.alias,
+    jwt: testDevicePhase.jwt,
   };
 
-  // Temperature
-  // Get data point
-  const xTemperature = [];
-  const yTemperature = [];
+  // Update categoryDataId if enntiy not exist
+  const editedEntity = [];
+  const associate = [];
 
-  const messages = await Message.find({
-    "metadata.devicePhaseId": req.params.devicePhaseId,
-  }).sort({ timestamp: -1 });
+  for (const entity of testDevicePhase.categoryDataId) {
+    const testEntity = await CategoryEntity.findById(entity);
 
-  res.status(200).json();
+    if (testEntity) {
+      const mainAttribute = await Attribute.findOne({
+        position: 0,
+        categoryId: testEntity.categoryId,
+      });
+
+      const testmainAttributeValue = await AttributeValue.findOne({
+        attributeId: mainAttribute._id,
+        categoryEntityId: testEntity._id,
+      });
+      editedEntity.push(testEntity);
+      associate.push({
+        id: testEntity._id,
+        name: testmainAttributeValue.value,
+      });
+    }
+  }
+
+  await DevicePhase.findByIdAndUpdate(testDevicePhase.id, {
+    categoryDataId: editedEntity,
+  });
+
+  formatOutput.associate = associate;
+
+  // // Temperature
+  // // Get data point
+  // const xTemperature = [];
+  // const yTemperature = [];
+
+  // const messages = await Message.find({
+  //   "metadata.devicePhaseId": req.params.devicePhaseId,
+  // }).sort({ timestamp: -1 });
+
+  res.status(200).json({
+    status: "success",
+    data: formatOutput,
+  });
 });
 
 // GET /api/devicePhase/:devicePhaseId/stat
