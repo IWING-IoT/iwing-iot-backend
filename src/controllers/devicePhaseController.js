@@ -319,10 +319,13 @@ exports.getDeviceInfo = catchAsync(async (req, res, next) => {
 
   const testDevice = await Device.findById(testDevicePhase.deviceId);
 
+  const testDeviceType = await DeviceType.findById(testDevice.type);
+
   const formatOutput = {
     name: testDevice.name,
     alias: testDevicePhase.alias,
     jwt: testDevicePhase.jwt,
+    type: testDeviceType.name,
   };
 
   // Update categoryDataId if enntiy not exist
