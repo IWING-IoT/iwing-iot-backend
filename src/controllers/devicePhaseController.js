@@ -322,6 +322,8 @@ exports.getDeviceInfo = catchAsync(async (req, res, next) => {
   const testDeviceType = await DeviceType.findById(testDevice.type);
 
   const formatOutput = {
+    id: testDevicePhase._id,
+    status: testDevicePhase.status,
     name: testDevice.name,
     alias: testDevicePhase.alias,
     jwt: testDevicePhase.jwt,
