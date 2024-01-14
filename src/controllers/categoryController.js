@@ -693,3 +693,61 @@ exports.deleteEntry = catchAsync(async (req, res, next) => {
   await CategoryEntity.deleteOne({ _id: req.params.entryId });
   res.status(204).json();
 });
+
+exports.getAllEntry = catchAsync(async (req, res, next) => {
+  console.log(req.params.projectId);
+  if (!isValidObjectId(req.params.projectId))
+    return next(new AppError("Invalid projectId", 400));
+
+  const testProject = await Project.findById(req.params.projectId);
+  if (!testProject) return next(new AppError("Project not found", 404));
+
+  const categories = await Category.aggregate([
+    {
+      $match: {
+        projectId: new mongoose.Types.ObjectId(req.params.projectId),
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        name: 1,
+      },
+    },
+  ]);
+
+  for (const category of categories) {
+    const categoryEntites = await CategoryEntity.find({
+      categoryId: category.id,
+    });
+
+    const attribute = await Attribute.findOne({
+      categoryId: category.id,
+      position: 0,
+    });
+
+    const attributeValues = await AttributeValue.aggregate([
+      {
+        $match: {
+          attributeId: attribute._id,
+        },
+      },
+      {
+        $project: {
+          id: "$_id",
+          _id: 0,
+          id: "$categoryEntityId",
+          name: "$value",
+        },
+      },
+    ]);
+    category.entry = attributeValues;
+  }
+
+  console.log(categories);
+  res.status(200).json({
+    status: "success",
+    data: categories,
+  });
+});

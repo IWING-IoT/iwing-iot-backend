@@ -35,4 +35,9 @@ router.get(
   categoryController.getCategoryMainAttribute
 );
 
+router.get(
+  "/:projectId/allEntry",
+  authController.protect,
+  categoryController.getAllEntry
+);
 module.exports = router;
