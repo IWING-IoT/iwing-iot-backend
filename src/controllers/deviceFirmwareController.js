@@ -64,9 +64,9 @@ exports.getDeviceFirmware = catchAsync(async (req, res, next) => {
 
   const formatOutput = {};
 
-  for (const firmware of deviceFirmwares) {
+  for (const deviceFirmware of deviceFirmwares) {
     const firmwareVersion = await FirmwareVersion.findById(
-      firmware.firmwareVersionId
+      deviceFirmware.firmwareVersionId
     );
     if (!firmwareVersion)
       return next(new AppError("FirmwareVersion not found", 404));
@@ -79,7 +79,7 @@ exports.getDeviceFirmware = catchAsync(async (req, res, next) => {
       id: firmwareVersion.id,
       name: firmware.name,
       commitNumber: urlParts[urlParts.length - 1].substring(0, 7),
-      autoUpdate: firmware.autoUpdate,
+      autoUpdate: deviceFirmware.autoUpdate,
     };
   }
 
@@ -129,22 +129,31 @@ exports.addFirmware = catchAsync(async (req, res, next) => {
     return next(new AppError("FirmwareVersion not found", 404));
   }
 
-  const testDeviceFirmware = await DeviceFirmware.findOne({
-    devicePhaseId: devicePhase.deviceId,
+  const testFirmware = await Firmware.findById(firmwareVersion.firmwareId);
+
+  if (req.fields.type !== testFirmware.type) {
+    return next(new AppError("Invalid input", 400));
+  }
+
+  const testDeviceFirmware = await DeviceFirmware.find({
+    devicePhaseId: req.params.devicePhaseId,
     isActive: true,
   });
 
-  if (testDeviceFirmware) {
-    const testFirmwareVersion = await FirmwareVersion.findById(
-      testDeviceFirmware.firmwareVersionId
-    );
-    const testFirmware = await Firmware.findById(
-      testFirmwareVersion.firmwareId
-    );
-    if (testFirmware.type === req.fields.type) {
-      return next(
-        new AppError("Device already has this type of firmware", 400)
+  if (testDeviceFirmware.length > 0) {
+    for (const deviceFirmware of testDeviceFirmware) {
+      const testFirmwareVersion = await FirmwareVersion.findById(
+        deviceFirmware.firmwareVersionId
       );
+      const testFirmware = await Firmware.findById(
+        testFirmwareVersion.firmwareId
+      );
+
+      if (testFirmware.type === req.fields.type) {
+        return next(
+          new AppError("Device already has this type of firmware", 400)
+        );
+      }
     }
   }
 
