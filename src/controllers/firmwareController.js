@@ -13,6 +13,7 @@ const FirmwareVersion = require("../models/firmwareVersionModel");
 const User = require("../models/userModel");
 
 const DeviceFirmware = require("../models/deviceFirmwareModel");
+const DevicePhase = require("../models/devicePhaseModel");
 const {
   ListBucketInventoryConfigurationsOutputFilterSensitiveLog,
 } = require("@aws-sdk/client-s3");
