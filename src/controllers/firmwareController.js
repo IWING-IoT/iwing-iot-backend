@@ -249,17 +249,19 @@ exports.createVersion = catchAsync(async (req, res, next) => {
   const activePhases = await Phase.find({ isActive: true });
   for (const phase of activePhases) {
     const devicePhases = await DevicePhase.find({ phaseId: phase._id });
+
     for (const devicePhase of devicePhases) {
       const deviceFirmware = await DeviceFirmware.findOne({
         devicePhaseId: devicePhase._id,
         autoUpdate: true,
         isActive: true,
       });
+
       if (deviceFirmware) {
         // Update deviceFirmware
         const newDeviceFirmware = await DeviceFirmware.create({
           devicePhaseId: deviceFirmware.devicePhaseId,
-          firmwareVersionId: req.fields.id,
+          firmwareVersionId: createdFirmwareVersion._id,
           autoUpdate: deviceFirmware.autoUpdate,
           startedAt: Date.now(),
         });
@@ -340,7 +342,6 @@ exports.editFirmware = catchAsync(async (req, res, next) => {
     editedBy: req.user.id,
   });
 
-  console.log(req.fields);
   res.status(204).json();
 });
 
