@@ -1,6 +1,7 @@
 const express = require("express");
 
 const devicePhaseController = require("./../controllers/devicePhaseController");
+const deviceFirmwareController = require("./../controllers/deviceFirmwareController");
 const authController = require("./../controllers/authController");
 const messageController = require("./../controllers/messageController");
 
@@ -39,7 +40,19 @@ router.get(
 router.get(
   "/:devicePhaseId/firmware",
   authController.protect,
-  devicePhaseController.getDeviceFirmware
+  deviceFirmwareController.getDeviceFirmware
+);
+
+router.post(
+  "/:devicePhaseId/firmware",
+  authController.protect,
+  deviceFirmwareController.addFirmware
+);
+
+router.get(
+  "/:devicePhaseId/firmware/firmwareLog",
+  authController.protect,
+  deviceFirmwareController.getDeviceFirmwareLog
 );
 
 router.put(

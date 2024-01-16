@@ -9,13 +9,14 @@ const axios = require("axios");
 const fs = require("fs");
 const crypto = require("crypto");
 const Firmware = require("../models/firmwareModel");
-const FirmwareVersion = require("../models/firmwareVersionMode");
+const FirmwareVersion = require("../models/firmwareVersionModel");
 const User = require("../models/userModel");
 
 const DeviceFirmware = require("../models/deviceFirmwareModel");
 const {
   ListBucketInventoryConfigurationsOutputFilterSensitiveLog,
 } = require("@aws-sdk/client-s3");
+const Phase = require("../models/phaseModel");
 
 const defaultMarkdown =
   '# Sample Markdown Title\n \
@@ -242,6 +243,31 @@ exports.createVersion = catchAsync(async (req, res, next) => {
     createdAt: Date.now(),
     createdBy: req.user.id,
   });
+
+  // Auto update firmware
+  const activePhases = await Phase.find({ isActive: true });
+  for (const phase of activePhases) {
+    const devicePhases = await DevicePhase.find({ phaseId: phase._id });
+    for (const devicePhase of devicePhases) {
+      const deviceFirmware = await DeviceFirmware.findOne({
+        devicePhaseId: devicePhase._id,
+        autoUpdate: true,
+        isActive: true,
+      });
+      if (deviceFirmware) {
+        // Update deviceFirmware
+        const newDeviceFirmware = await DeviceFirmware.create({
+          devicePhaseId: deviceFirmware.devicePhaseId,
+          firmwareVersionId: req.fields.id,
+          autoUpdate: deviceFirmware.autoUpdate,
+          startedAt: Date.now(),
+        });
+
+        deviceFirmware.isActive = false;
+        deviceFirmware.endedAt = Date.now();
+      }
+    }
+  }
 
   res.status(201).json();
 });

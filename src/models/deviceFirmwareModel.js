@@ -1,21 +1,25 @@
 const mongoose = require("mongoose");
 
 const deviceFirmwareSchema = new mongoose.Schema({
-  deviceId: {
+  devicePhaseId: {
     type: mongoose.Schema.ObjectId,
-    ref: "Device",
-    required: [true, "DeviceFirmware must has a deviceId"],
+    ref: "DevicePhase",
+    required: [true, "DeviceFirmware must has a devicePhaseId"],
   },
   firmwareVersionId: {
     type: mongoose.Schema.ObjectId,
     ref: "FirmwareVersion",
     required: [true, "DeviceFirmware must has a firmwareVersionId"],
   },
-  stratedAt: Date,
+  startedAt: Date,
   endedAt: Date,
   isActive: {
     type: Boolean,
     default: true,
+  },
+  autoUpdate: {
+    type: Boolean,
+    default: false,
   },
 });
 

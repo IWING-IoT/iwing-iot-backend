@@ -55,7 +55,7 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
-// POST /api/phase/:phaseId/device (testing)
+// POST /api/phase/:phaseId/device (finished)
 exports.addDevice = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
     return next(new AppError("Invalid phaseId", 400));
@@ -103,7 +103,7 @@ exports.addDevice = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
-// GET /api/phase/:phaseId/device (testing)
+// GET /api/phase/:phaseId/device (finished)
 exports.getDevice = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
     return next(new AppError("Invalid phaseId", 400));
@@ -215,7 +215,7 @@ exports.getDevice = catchAsync(async (req, res, next) => {
   });
 });
 
-// PATCH /api/devicePhase/:devicePhaseId/status (testing)
+// PATCH /api/devicePhase/:devicePhaseId/status (finished)
 exports.deviceStatus = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.devicePhaseId))
     return next(new AppError("Invalid devicePhaseId", 400));
@@ -246,7 +246,7 @@ exports.deviceStatus = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// DELETE /api/devicePhase/:devicePhaseId (testing)
+// DELETE /api/devicePhase/:devicePhaseId (finished)
 exports.removeDevice = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.devicePhaseId))
     return next(new AppError("Invalid devicePhaseId", 400));
@@ -274,7 +274,7 @@ exports.removeDevice = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// PATCH /api/devicePhase/:devicePhaseId/jwt (testing)
+// PATCH /api/devicePhase/:devicePhaseId/jwt (finished)
 exports.generateJwt = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.devicePhaseId))
     return next(new AppError("Invalid devicePhaseId", 400));
@@ -380,11 +380,6 @@ exports.getDeviceInfo = catchAsync(async (req, res, next) => {
 exports.getDeviceStat = catchAsync(async (req, res, next) => [
   res.status(200).json(),
 ]);
-
-// GET /api/devicePhase/:devicePhaseId/firmware
-exports.getDeviceFirmware = catchAsync(async (req, res, next) => {
-  res.status(200).json();
-});
 
 // PATCH /api/devicePhase/:devicePhaseId (testing)
 exports.editDevice = catchAsync(async (req, res, next) => {
