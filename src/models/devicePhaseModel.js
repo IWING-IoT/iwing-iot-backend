@@ -41,6 +41,10 @@ const devicePhaseSchema = new mongoose.Schema({
   jwt: {
     type: String,
   },
+  isOutside: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: Date,
   createdBy: {
     type: mongoose.Schema.ObjectId,

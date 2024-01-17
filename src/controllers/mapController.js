@@ -10,6 +10,7 @@ const Message = require("../models/messageModel");
 const Area = require("../models/areaModel");
 
 const turf = require("@turf/turf");
+const de9im = require("de9im");
 /**
  * @desc check wheather input id is valid mongodb objectID
  * @param {String} id that want to check
@@ -50,18 +51,8 @@ const validateCoordinates = (coordinates) => {
     coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
     coordinates[0][1] !== coordinates[coordinates.length - 1][1]
   ) {
-    return false;
+    coordinates.push(coordinates[0]);
   }
-
-  // Create a polygon from the coordinates
-  const polygon = turf.polygon([coordinates]);
-
-  // Check if the polygon is valid
-  if (!turf.booleanValid(polygon)) {
-    return false;
-  }
-
-  // Additional checks if needed
 
   return true;
 };
@@ -207,7 +198,7 @@ exports.createArea = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid phaseId", 400));
   }
 
-  const testPhase = Phase.findById(req.params.phaseId);
+  const testPhase = await Phase.findById(req.params.phaseId);
   if (!testPhase) {
     return next(new AppError("Phase not found", 404));
   }
@@ -225,6 +216,7 @@ exports.createArea = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid input", 400));
   }
 
+  console.log(req.fields.coordinates);
   if (!validateCoordinates(req.fields.coordinates)) {
     return next(new AppError("Invalid coordinates", 400));
   }

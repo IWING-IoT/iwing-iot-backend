@@ -19,7 +19,7 @@ const areaSchema = new mongoose.Schema({
     default: true,
   },
   coordinates: {
-    type: [Number],
+    type: [[Number]],
     required: [true, "Area must has coordinates"],
   },
   createdAt: Date,

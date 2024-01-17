@@ -10,6 +10,38 @@ const DevicePhase = require("../models/devicePhaseModel");
 const Message = require("../models/messageModel");
 const PhaseApi = require("../models/phaseApiModel");
 const Gateway = require("../models/gatewayModel");
+const Area = require("../models/areaModel");
+
+/**
+ * @return {boolean} true if (lng, lat) is in bounds
+ */
+const contains = (bounds, lat, lng) => {
+  //https://rosettacode.org/wiki/Ray-casting_algorithm
+  var count = 0;
+  for (var b = 0; b < bounds.length; b++) {
+    var vertex1 = bounds[b];
+    var vertex2 = bounds[(b + 1) % bounds.length];
+    if (west(vertex1, vertex2, lng, lat)) ++count;
+  }
+  return count % 2;
+
+  /**
+   * @return {boolean} true if (x,y) is west of the line segment connecting A and B
+   */
+  function west(A, B, x, y) {
+    if (A[0] <= B[0]) {
+      if (y <= A[0] || y > B[0] || (x >= A[1] && x >= B[1])) {
+        return false;
+      } else if (x < A[1] && x < B[1]) {
+        return true;
+      } else {
+        return (y - A[0]) / (x - A[1]) > (B[0] - A[0]) / (B[1] - A[1]);
+      }
+    } else {
+      return west(B, A, x, y);
+    }
+  }
+};
 
 // POST /api/message/standalone
 exports.createStandalone = catchAsync(async (req, res, next) => {
@@ -64,6 +96,33 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
       : testDevicePhase.battery,
   });
   res.status(201).json();
+
+  //// Check if point is in area
+  // reference : https://rosettacode.org/wiki/Ray-casting_algorithm#JavaScript
+
+  const areas = await Area.find({
+    phaseId: testDevicePhase.phaseId,
+    isActive: true,
+  });
+
+  for (const area of areas) {
+    // If outside but old state is inside change state to outside
+    if (
+      !contains(area.coordinates, req.fields.latitude, req.fields.longitude) &&
+      !testDevicePhase.isOutside
+    ) {
+      testDevicePhase.isOutside = true;
+      area.alert += 1;
+      area.save();
+    } else if (
+      contains(area.coordinates, req.fields.latitude, req.fields.longitude) &&
+      testDevicePhase.isOutside
+    ) {
+      testDevicePhase.isOutside = false;
+      area.save();
+    }
+  }
+  testDevicePhase.save();
 });
 
 // POST /api/message/gateway
@@ -181,4 +240,38 @@ exports.createGateway = catchAsync(async (req, res, next) => {
   }
 
   res.status(201).json();
+
+  //// Check if point is in area
+  // reference : https://rosettacode.org/wiki/Ray-casting_algorithm#JavaScript
+
+  // Check if this request from nodes
+  if (req.fields.nodeAlias) {
+    const areas = await Area.find({
+      phaseId: testDevicePhase.phaseId,
+      isActive: true,
+    });
+
+    for (const area of areas) {
+      // If outside but old state is inside change state to outside
+      if (
+        !contains(
+          area.coordinates,
+          req.fields.latitude,
+          req.fields.longitude
+        ) &&
+        !testDevicePhase.isOutside
+      ) {
+        testDevicePhase.isOutside = true;
+        area.alert += 1;
+        area.save();
+      } else if (
+        contains(area.coordinates, req.fields.latitude, req.fields.longitude) &&
+        testDevicePhase.isOutside
+      ) {
+        testDevicePhase.isOutside = false;
+        area.save();
+      }
+    }
+    testDevicePhase.save();
+  }
 });
