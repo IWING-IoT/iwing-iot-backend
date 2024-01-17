@@ -89,5 +89,48 @@ exports.getMapPath = catchAsync(async (req, res, next) => {
     return next(new AppError("Phase not found", 404));
   }
 
-  res.status(200).json();
+  const devicePhases = await DevicePhase.find({
+    phaseId: req.params.phaseId,
+  }).populate("deviceId");
+
+  const formatOutput = [];
+  for (const devicePhase of devicePhases) {
+    const messages = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": devicePhase._id,
+          createdAt: {
+            $lte: req.query.endAt
+              ? new Date(req.query.endAt.split(" ")[0])
+              : new Date(),
+            $gte: req.query.startAt
+              ? new Date(req.query.endAt.split(" ")[0])
+              : new Date(0),
+          },
+        },
+      },
+      { $sort: { timestamp: 1 } },
+      {
+        $project: {
+          id: "$_id",
+          _id: 0,
+          latitude: 1,
+          longitude: 1,
+          createdAt: 1,
+        },
+      },
+    ]);
+
+    formatOutput.push({
+      devicePhaseId: devicePhase._id,
+      name: devicePhase.deviceId.name,
+      alias: devicePhase.alias,
+      path: messages,
+    });
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: formatOutput,
+  });
 });
