@@ -268,6 +268,7 @@ exports.createVersion = catchAsync(async (req, res, next) => {
 
         deviceFirmware.isActive = false;
         deviceFirmware.endedAt = Date.now();
+        await deviceFirmware.save();
       }
     }
   }
@@ -296,6 +297,9 @@ exports.deleteFirmware = catchAsync(async (req, res, next) => {
     // Delete
     await Upload.deleteObject(version.filename);
 
+    // Delete deviceFirmware
+    await DeviceFirmware.deleteMany({ firmwareId: version._id });
+
     await FirmwareVersion.deleteOne({ _id: version._id });
   }
 
@@ -320,6 +324,7 @@ exports.deleteVersion = catchAsync(async (req, res, next) => {
 
   await FirmwareVersion.deleteOne({ _id: req.params.firmwareVersionId });
 
+  // Delete deviceFirmware
   await DeviceFirmware.deleteMany({
     firmwareVersionId: req.params.firmwareVersionId,
   });

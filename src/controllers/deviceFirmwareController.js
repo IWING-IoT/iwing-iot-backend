@@ -76,6 +76,7 @@ exports.getDeviceFirmware = catchAsync(async (req, res, next) => {
 
     const urlParts = firmwareVersion.gitUrl.split("/");
     formatOutput[firmware.type] = {
+      id: deviceFirmware._id,
       firmware: {
         id: firmware.id,
         name: firmware.name,
