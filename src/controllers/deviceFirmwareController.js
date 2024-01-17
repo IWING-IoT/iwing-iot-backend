@@ -214,10 +214,11 @@ exports.editDeviceFirmware = catchAsync(async (req, res, next) => {
     deviceFirmware.endedAt = Date.now();
     deviceFirmware.isActive = false;
     await deviceFirmware.save();
-  } else {
-    deviceFirmware.autoUpdate = req.fields.autoUpdate;
-    await deviceFirmware.save();
   }
+  deviceFirmware.autoUpdate = req.fields.autoUpdate
+    ? req.fields.autoUpdate
+    : deviceFirmware.autoUpdate;
+  await deviceFirmware.save();
 
   res.status(204).json();
 });
