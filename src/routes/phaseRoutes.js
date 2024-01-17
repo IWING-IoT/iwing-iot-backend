@@ -71,4 +71,14 @@ router.get(
   mapController.getMapPath
 );
 
+router.get("/:phaseId/area", authController.protect, mapController.getMapAreas);
+
+router.post(
+  "/:phaseId/area",
+  authController.protect,
+  mapController.createArea
+);
+
+
+
 module.exports = router;

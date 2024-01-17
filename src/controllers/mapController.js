@@ -7,6 +7,9 @@ const checkCollab = require("./../utils/checkCollab");
 const Phase = require("./../models/phaseModel");
 const DevicePhase = require("../models/devicePhaseModel");
 const Message = require("../models/messageModel");
+const Area = require("../models/areaModel");
+
+const turf = require("@turf/turf");
 /**
  * @desc check wheather input id is valid mongodb objectID
  * @param {String} id that want to check
@@ -35,7 +38,35 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
-// GET /api/phase/:phaseId/map/position
+// Validate coordinates using Turf.js
+const validateCoordinates = (coordinates) => {
+  // Ensure at least 3 coordinates are provided
+  if (coordinates.length < 3) {
+    return false;
+  }
+
+  // Ensure the first and last coordinates are the same
+  if (
+    coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
+    coordinates[0][1] !== coordinates[coordinates.length - 1][1]
+  ) {
+    return false;
+  }
+
+  // Create a polygon from the coordinates
+  const polygon = turf.polygon([coordinates]);
+
+  // Check if the polygon is valid
+  if (!turf.booleanValid(polygon)) {
+    return false;
+  }
+
+  // Additional checks if needed
+
+  return true;
+};
+
+// GET /api/phase/:phaseId/map/position (testing)
 exports.getMapPosition = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId)) {
     return next(new AppError("Invalid phaseId", 400));
@@ -79,7 +110,7 @@ exports.getMapPosition = catchAsync(async (req, res, next) => {
   });
 });
 
-// GET /api/phase/:phaseId/map/path
+// GET /api/phase/:phaseId/map/path (testing)
 exports.getMapPath = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId)) {
     return next(new AppError("Invalid phaseId", 400));
@@ -133,4 +164,178 @@ exports.getMapPath = catchAsync(async (req, res, next) => {
     status: "success",
     data: formatOutput,
   });
+});
+
+// GET /api/phase/:phaseId/area (testing)
+exports.getMapAreas = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.phaseId)) {
+    return next(new AppError("Invalid phaseId", 400));
+  }
+  const testPhase = Phase.findById(req.params.phaseId);
+  if (!testPhase) {
+    return next(new AppError("Phase not found", 404));
+  }
+
+  const areas = await Area.aggregate([
+    {
+      $match: {
+        phaseId: new mongoose.Types.ObjectId(req.params.phaseId),
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        name: 1,
+        description: 1,
+        coordinates: 1,
+        isActive: 1,
+        alert: 1,
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    status: "success",
+    data: areas,
+  });
+});
+
+// GET /api/phase/:phaseId/area (testing)
+exports.createArea = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.phaseId)) {
+    return next(new AppError("Invalid phaseId", 400));
+  }
+
+  const testPhase = Phase.findById(req.params.phaseId);
+  if (!testPhase) {
+    return next(new AppError("Phase not found", 404));
+  }
+
+  checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to create new area.",
+    "can_edit",
+    "owner"
+  );
+
+  if (!req.fields.name || !req.fields.coordinates) {
+    return next(new AppError("Invalid input", 400));
+  }
+
+  if (!validateCoordinates(req.fields.coordinates)) {
+    return next(new AppError("Invalid coordinates", 400));
+  }
+
+  const newArea = await Area.create({
+    name: req.fields.name,
+    description: req.fields.description,
+    phaseId: req.params.phaseId,
+    coordinates: req.fields.coordinates,
+    createdAt: new Date(),
+    createdBy: req.user.id,
+  });
+
+  res.status(201).json();
+});
+
+// GET /api/area/:areaId (testing)
+exports.getArea = catchAsync(async (req, res, next) => {
+  เ;
+  if (!isValidObjectId(req.params.areaId)) {
+    return next(new AppError("Invalid areaId", 400));
+  }
+  const area = await Area.aggregate([
+    {
+      $match: { _id: new mongoose.Types.ObjectId(req.params.areaId) },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        name: 1,
+        description: 1,
+        coordinates: 1,
+        isActive: 1,
+        alert: 1,
+      },
+    },
+  ]);
+  if (!area[0]) {
+    return next(new AppError("Area not found", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: area[0],
+  });
+});
+
+// PUT /api/area/:areaId (testing)
+exports.editArea = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.areaId)) {
+    return next(new AppError("Invalid areaId", 400));
+  }
+  const area = await Area.findById(req.params.areaId);
+  if (!area) {
+    return next(new AppError("Area not found", 404));
+  }
+  const testPhase = Phase.findById(area.phaseId);
+  if (!testPhase) {
+    return next(new AppError("Phase not found", 404));
+  }
+  checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to edit area.",
+    "can_edit",
+    "owner"
+  );
+
+  if (!req.fields.name || !req.fields.coordinates || !req.fields.description) {
+    return next(new AppError("Invalid input", 400));
+  }
+
+  if (!validateCoordinates(req.fields.coordinates)) {
+    return next(new AppError("Invalid coordinates", 400));
+  }
+
+  area.name = req.fields.name;
+  area.description = req.fields.description;
+  area.coordinates = req.fields.coordinates;
+  area.isActive = req.fields.isActive;
+  area.editedAt = new Date();
+  area.editedBy = req.user.id;
+  await area.save();
+
+  res.status(204).json();
+});
+
+// DELETE /api/area/:areaId (testing)
+exports.deleteArea = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.areaId)) {
+    return next(new AppError("Invalid areaId", 400));
+  }
+  const area = await Area.findById(req.params.areaId);
+  if (!area) {
+    return next(new AppError("Area not found", 404));
+  }
+  const testPhase = Phase.findById(area.phaseId);
+  if (!testPhase) {
+    return next(new AppError("Phase not found", 404));
+  }
+  checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to delete area.",
+    "can_edit",
+    "owner"
+  );
+
+  await area.remove();
+  res.status(204).json();
 });
