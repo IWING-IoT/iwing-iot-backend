@@ -201,23 +201,27 @@ exports.editDeviceFirmware = catchAsync(async (req, res, next) => {
     "can_edit",
     "owner"
   );
-
-  if (req.fields.id) {
+  if (!compareId(req.fields.id, deviceFirmware.firmwareVersionId)) {
     // Create new deviceFirmware
     const newDeviceFirmware = await DeviceFirmware.create({
       devicePhaseId: deviceFirmware.devicePhaseId,
       firmwareVersionId: req.fields.id,
-      autoUpdate: deviceFirmware.autoUpdate,
+      autoUpdate: req.fields.autoUpdate,
       startedAt: Date.now(),
     });
 
     deviceFirmware.endedAt = Date.now();
     deviceFirmware.isActive = false;
     await deviceFirmware.save();
+  } else {
+    deviceFirmware.autoUpdate = req.fields.autoUpdate;
+    await deviceFirmware.save();
   }
-  deviceFirmware.autoUpdate = req.fields.autoUpdate
-    ? req.fields.autoUpdate
-    : deviceFirmware.autoUpdate;
+
+  //   deviceFirmware.autoUpdate = req.fields.autoUpdate
+  //     ? req.fields.autoUpdate
+  //     : deviceFirmware.autoUpdate;
+  console.log(deviceFirmware);
   await deviceFirmware.save();
 
   res.status(204).json();
