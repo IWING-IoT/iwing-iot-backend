@@ -4,8 +4,8 @@ const messageSchema = new mongoose.Schema(
   {
     createdAt: Date,
     temperature: Number,
-    lattitude: Number,
-    longtitude: Number,
+    latitude: Number,
+    longitude: Number,
     battery: Number,
     metadata: {
       devicePhaseId: {

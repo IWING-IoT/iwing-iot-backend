@@ -188,9 +188,14 @@ exports.editDeviceFirmware = catchAsync(async (req, res, next) => {
   if (!devicePhase) {
     return next(new AppError("DevicePhase not found", 404));
   }
+
+  const testPhase = await Phase.findById(devicePhase.phaseId);
+  if (!testPhase) {
+    return next(new AppError("TestPhase not found", 404));
+  }
   checkCollab(
     next,
-    devicePhase.phaseId,
+    testPhase.projectId,
     req.user.id,
     "You do not have permission to edit device firmware.",
     "can_edit",

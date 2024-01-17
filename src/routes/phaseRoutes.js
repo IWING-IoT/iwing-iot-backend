@@ -4,6 +4,7 @@ const authController = require("./../controllers/authController");
 const phaseController = require("./../controllers/phaseController");
 const phaseApiController = require("./../controllers/phaseApiController");
 const devicePhaseController = require("./../controllers/devicePhaseController");
+const mapController = require("./../controllers/mapController");
 
 const router = express.Router();
 
@@ -55,6 +56,19 @@ router.get(
   "/:phaseId/device",
   authController.protect,
   devicePhaseController.getDevice
+);
+
+// Map API
+router.get(
+  "/:phaseId/map/position",
+  authController.protect,
+  mapController.getMapPosition
+);
+
+router.get(
+  "/:phaseId/map/path",
+  authController.protect,
+  mapController.getMapPath
 );
 
 module.exports = router;
