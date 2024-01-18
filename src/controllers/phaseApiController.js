@@ -209,7 +209,7 @@ exports.example = catchAsync(async (req, res, next) => {
   if (!testPhase) return next(new AppError("Phase not found", 404));
 
   const formatOutput = {
-    gateway: { aliasName: "alias name of device" },
+    gateway: { nodeAlias: "alias name of node" },
     default: {},
   };
 

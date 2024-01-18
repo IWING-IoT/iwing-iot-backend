@@ -82,6 +82,7 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
       devicePhaseId: decoded.devicePhaseId,
     },
     timestamp: req.fields.createdAt ? req.fields.createdAt : Date.now(),
+    recievedAt: Date.now(),
     ...formatData,
   });
 
@@ -164,6 +165,7 @@ exports.createGateway = catchAsync(async (req, res, next) => {
     const apis = await PhaseApi.find({ phaseId: testDevicePhase.phaseId });
 
     const formatData = {};
+
     for (const api of apis) {
       formatData[`${api.name}`] = req.fields[`${api.name}`];
     }
@@ -186,6 +188,7 @@ exports.createGateway = catchAsync(async (req, res, next) => {
         devicePhaseId: testNode._id,
       },
       timestamp: req.fields.createdAt ? req.fields.createdAt : Date.now(),
+      recievedAt: Date.now(),
       ...formatData,
     });
     // Update gateway
@@ -214,14 +217,15 @@ exports.createGateway = catchAsync(async (req, res, next) => {
   } else {
     // From Gateway
     // Update gateway metadata
+    const formatData = {};
     await DevicePhase.findByIdAndUpdate(decoded.devicePhaseId, {
       messageReceive: ++testDevicePhase.messageReceive,
       lastConnection: Date.now(),
-      temperature: formatData[`${temperature}`]
-        ? formatData[`${temperature}`]
+      temperature: formatData[`temperature`]
+        ? formatData[`temperature`]
         : testDevicePhase.temperature,
-      battery: formatData[`${battery}`]
-        ? formatData[`${battery}`]
+      battery: formatData[`battery`]
+        ? formatData[`battery`]
         : testDevicePhase.battery,
     });
 
@@ -232,6 +236,7 @@ exports.createGateway = catchAsync(async (req, res, next) => {
         devicePhaseId: decoded.devicePhaseIds,
       },
       timestamp: req.fields.createdAt ? req.fields.createdAt : Date.now(),
+      recievedAt: Date.now(),
       temperature: req.fields.temperature,
       battery: req.fields.battery,
       lattitude: null,

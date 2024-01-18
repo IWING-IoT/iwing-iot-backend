@@ -19,14 +19,14 @@ const s3 = new S3Client({
   },
 });
 
-exports.putObject = async () => {
+exports.putObject = async (name = null) => {
   const generateFileName = (bytes = 32) =>
     crypto.randomBytes(bytes).toString("hex");
 
   const filename = generateFileName();
   const putObjectCommand = new PutObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME,
-    Key: filename,
+    Key: name ? name : filename,
   });
 
   const signedURL = await getSignedUrl(s3, putObjectCommand, {

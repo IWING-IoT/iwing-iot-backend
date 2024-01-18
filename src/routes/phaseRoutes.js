@@ -73,12 +73,13 @@ router.get(
 
 router.get("/:phaseId/area", authController.protect, mapController.getMapAreas);
 
-router.post(
-  "/:phaseId/area",
+router.post("/:phaseId/area", authController.protect, mapController.createArea);
+
+// CSV api
+router.get(
+  "/:phaseId/csv",
   authController.protect,
-  mapController.createArea
+  phaseController.downloadCsv
 );
-
-
 
 module.exports = router;

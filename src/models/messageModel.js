@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const messageSchema = new mongoose.Schema(
   {
     createdAt: Date,
+    recievedAt: Date,
     temperature: Number,
     latitude: Number,
     longitude: Number,
