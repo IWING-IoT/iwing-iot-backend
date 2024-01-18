@@ -90,35 +90,35 @@ exports.getMapPosition = catchAsync(async (req, res, next) => {
 
     if (message && message.length === 1) {
       // // Update categoryDataId if enntiy not exist
-      const editedEntity = [];
-      const associate = [];
+      // const editedEntity = [];
+      // const associate = [];
 
-      for (const entity of devicePhase.categoryDataId) {
-        const testEntity = await CategoryEntity.findById(entity);
+      // for (const entity of devicePhase.categoryDataId) {
+      //   const testEntity = await CategoryEntity.findById(entity);
 
-        if (testEntity) {
-          const mainAttribute = await Attribute.findOne({
-            position: 0,
-            categoryId: testEntity.categoryId,
-          });
+      //   if (testEntity) {
+      //     const mainAttribute = await Attribute.findOne({
+      //       position: 0,
+      //       categoryId: testEntity.categoryId,
+      //     });
 
-          const testmainAttributeValue = await AttributeValue.findOne({
-            attributeId: mainAttribute._id,
-            categoryEntityId: testEntity._id,
-          });
-          editedEntity.push(testEntity);
-          associate.push({
-            id: testEntity._id,
-            name: testmainAttributeValue.value,
-          });
-        }
-      }
+      //     const testmainAttributeValue = await AttributeValue.findOne({
+      //       attributeId: mainAttribute._id,
+      //       categoryEntityId: testEntity._id,
+      //     });
+      //     editedEntity.push(testEntity);
+      //     associate.push({
+      //       id: testEntity._id,
+      //       name: testmainAttributeValue.value,
+      //     });
+      //   }
+      // }
 
-      await DevicePhase.findByIdAndUpdate(devicePhase.id, {
-        categoryDataId: editedEntity,
-      });
-      devicePhase.associate = associate;
-      delete devicePhase.categoryDataId;
+      // await DevicePhase.findByIdAndUpdate(devicePhase.id, {
+      //   categoryDataId: editedEntity,
+      // });
+      // devicePhase.associate = associate;
+      // delete devicePhase.categoryDataId;
 
       // Type:
       const testDeviceType = await Device.findById(
@@ -134,7 +134,7 @@ exports.getMapPosition = catchAsync(async (req, res, next) => {
         battery: message[0].battery,
         temperature: message[0].temperature,
         lastConnection: message[0].createdAt,
-        associate,
+        // associate,
         type: testDeviceType.type.name,
       });
     }
