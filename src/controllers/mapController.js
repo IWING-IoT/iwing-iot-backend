@@ -8,6 +8,10 @@ const Phase = require("./../models/phaseModel");
 const DevicePhase = require("../models/devicePhaseModel");
 const Message = require("../models/messageModel");
 const Area = require("../models/areaModel");
+const CategoryEntity = require("../models/categoryEntityModel");
+const Attribute = require("../models/attributeModel");
+const AttributeValue = require("../models/attributeValueModel");
+const Device = require("../models/deviceModel");
 
 const turf = require("@turf/turf");
 const de9im = require("de9im");
@@ -85,12 +89,53 @@ exports.getMapPosition = catchAsync(async (req, res, next) => {
       .limit(1);
 
     if (message && message.length === 1) {
+      // Update categoryDataId if enntiy not exist
+      const editedEntity = [];
+      const associate = [];
+
+      for (const entity of devicePhase.categoryDataId) {
+        const testEntity = await CategoryEntity.findById(entity);
+
+        if (testEntity) {
+          const mainAttribute = await Attribute.findOne({
+            position: 0,
+            categoryId: testEntity.categoryId,
+          });
+
+          const testmainAttributeValue = await AttributeValue.findOne({
+            attributeId: mainAttribute._id,
+            categoryEntityId: testEntity._id,
+          });
+          editedEntity.push(testEntity);
+          associate.push({
+            id: testEntity._id,
+            name: testmainAttributeValue.value,
+          });
+        }
+      }
+
+      await DevicePhase.findByIdAndUpdate(devicePhase.id, {
+        categoryDataId: editedEntity,
+      });
+      devicePhase.associate = associate;
+      delete devicePhase.categoryDataId;
+
+      // Type:
+      const testDeviceType = await Device.findById(
+        devicePhase.deviceId
+      ).populate("type");
+
       formatOutput.push({
         devicePhaseId: devicePhase._id,
         name: devicePhase.deviceId.name,
         alias: devicePhase.alias,
         latitude: message[0].latitude,
         longitude: message[0].longitude,
+        battery: message[0].battery,
+        temperature: message[0].temperature,
+        lastConnection: message[0].createdAt,
+        associate,
+        type: testDeviceType.type.name,
       });
     }
   }
