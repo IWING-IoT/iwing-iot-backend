@@ -235,7 +235,6 @@ exports.createArea = catchAsync(async (req, res, next) => {
 
 // GET /api/area/:areaId (testing)
 exports.getArea = catchAsync(async (req, res, next) => {
-  เ;
   if (!isValidObjectId(req.params.areaId)) {
     return next(new AppError("Invalid areaId", 400));
   }
