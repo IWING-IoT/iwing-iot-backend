@@ -171,7 +171,7 @@ exports.getMapPath = catchAsync(async (req, res, next) => {
               ? new Date(req.query.endAt.split(" ")[0])
               : new Date(),
             $gte: req.query.startAt
-              ? new Date(req.query.endAt.split(" ")[0])
+              ? new Date(req.query.startAt.split(" ")[0])
               : new Date(0),
           },
         },
