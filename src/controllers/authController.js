@@ -11,6 +11,7 @@ const signToken = (objectSigned) => {
   });
 };
 
+
 // API /signin
 exports.signin = catchAsync(async (req, res, next) => {
   const { email, password } = req.fields;
