@@ -326,6 +326,9 @@ exports.getDeviceInfo = catchAsync(async (req, res, next) => {
     status: testDevicePhase.status,
     name: testDevice.name,
     alias: testDevicePhase.alias,
+    battery: testDevicePhase.battery,
+    temperature: testDevicePhase.temperature,
+    lastCommunuication: testDevicePhase.lastConnection,
     jwt: testDevicePhase.jwt,
     type: testDeviceType.name,
   };
