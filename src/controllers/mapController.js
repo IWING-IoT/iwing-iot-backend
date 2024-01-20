@@ -188,6 +188,8 @@ exports.getMapPath = catchAsync(async (req, res, next) => {
       },
     ]);
 
+    if(messages.length === 0) continue;
+
     formatOutput.push({
       devicePhaseId: devicePhase._id,
       name: devicePhase.deviceId.name,
