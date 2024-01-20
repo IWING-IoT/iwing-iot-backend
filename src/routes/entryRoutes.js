@@ -13,4 +13,5 @@ router.delete(
   categoryController.deleteEntry
 );
 
+
 module.exports = router;
