@@ -93,25 +93,25 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
 
   console.log(formatData);
 
-  // await Message.create({
-  //   metadata: {
-  //     devicePhaseId: decoded.devicePhaseId,
-  //   },
-  //   timestamp: req.fields.createdAt ? req.fields.createdAt : Date.now(),
-  //   recievedAt,
-  //   ...formatData,
-  // });
+  await Message.create({
+    metadata: {
+      devicePhaseId: decoded.devicePhaseId,
+    },
+    timestamp: req.fields.createdAt ? req.fields.createdAt : Date.now(),
+    recievedAt,
+    ...formatData,
+  });
 
-  // await DevicePhase.findByIdAndUpdate(decoded.devicePhaseId, {
-  //   messageReceive: ++testDevicePhase.messageReceive,
-  //   lastConnection: Date.now(),
-  //   temperature: formatData[`temperature`]
-  //     ? formatData[`temperature`]
-  //     : testDevicePhase.temperature,
-  //   battery: formatData[`battery`]
-  //     ? formatData[`battery`]
-  //     : testDevicePhase.battery,
-  // });
+  await DevicePhase.findByIdAndUpdate(decoded.devicePhaseId, {
+    messageReceive: ++testDevicePhase.messageReceive,
+    lastConnection: Date.now(),
+    temperature: formatData[`temperature`]
+      ? formatData[`temperature`]
+      : testDevicePhase.temperature,
+    battery: formatData[`battery`]
+      ? formatData[`battery`]
+      : testDevicePhase.battery,
+  });
   res.status(201).json();
 
   //// Check if point is in area
@@ -191,7 +191,6 @@ exports.createGateway = catchAsync(async (req, res, next) => {
     const formatData = {};
 
     for (const api of apis) {
-      
       formatData[`${api.name}`] = req.fields[`${api.name}`];
     }
     console.log(formatData);
