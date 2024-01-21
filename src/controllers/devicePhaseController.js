@@ -20,6 +20,7 @@ const jwt = require("jsonwebtoken");
 const {
   ListBucketInventoryConfigurationsOutputFilterSensitiveLog,
 } = require("@aws-sdk/client-s3");
+const e = require("cors");
 
 const signToken = (objectSigned) => {
   return jwt.sign(objectSigned, process.env.JWT_SECRET, {
@@ -308,7 +309,7 @@ exports.generateJwt = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// GET /api/devicePhase/:devicePhaseId
+// GET /api/devicePhase/:devicePhaseId (finished)
 exports.getDeviceInfo = catchAsync(async (req, res, next) => {
   const dataPointX = 20;
   if (!isValidObjectId(req.params.devicePhaseId))
@@ -364,15 +365,6 @@ exports.getDeviceInfo = catchAsync(async (req, res, next) => {
 
   formatOutput.associate = associate;
 
-  // // Temperature
-  // // Get data point
-  // const xTemperature = [];
-  // const yTemperature = [];
-
-  // const messages = await Message.find({
-  //   "metadata.devicePhaseId": req.params.devicePhaseId,
-  // }).sort({ timestamp: -1 });
-
   res.status(200).json({
     status: "success",
     data: formatOutput,
@@ -384,7 +376,28 @@ exports.getDeviceStat = catchAsync(async (req, res, next) => [
   res.status(200).json(),
 ]);
 
-// PATCH /api/devicePhase/:devicePhaseId (testing)
+// GET /api/devicePhase/:devicePhaseId/graph (finished)
+exports.getDeviceGraph = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.devicePhaseId))
+    return next(new AppError("Invalid devicePhaseId", 400));
+
+  const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
+  if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
+
+  if(req.query.type === "battery"){
+
+  }else if(req.query.type === "temperature"){
+
+  }else if(req.query.type === "message"){
+
+  }else{
+    return next(new AppError("Invalid type", 400));
+  }
+
+  res.status(200).json()
+});
+
+// PATCH /api/devicePhase/:devicePhaseId (finished)
 exports.editDevice = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.devicePhaseId))
     return next(new AppError("Invalid devicePhaseId", 400));
@@ -425,7 +438,7 @@ exports.editDevice = catchAsync(async (req, res, next) => {
   res.status(200).json();
 });
 
-// GET /api/devicePhase/:devicePhaseId/gateway (testing)
+// GET /api/devicePhase/:devicePhaseId/gateway (finished)
 exports.getNodesGateway = catchAsync(async (req, res, next) => {
   // Check if devicePhaseId is valid
   if (!isValidObjectId(req.params.devicePhaseId))
