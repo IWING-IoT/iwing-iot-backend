@@ -191,6 +191,7 @@ exports.createGateway = catchAsync(async (req, res, next) => {
     const formatData = {};
 
     for (const api of apis) {
+      
       formatData[`${api.name}`] = req.fields[`${api.name}`];
     }
     console.log(formatData);

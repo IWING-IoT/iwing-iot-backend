@@ -108,7 +108,11 @@ exports.getApi = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    data: api,
+    data: api.map((obj) => {
+      return obj.name === "longitude" || obj.name === "latitude"
+        ? { ...obj, lock: true }
+        : { ...obj, lock: false };
+    }),
   });
 });
 

@@ -5,6 +5,9 @@ const { promisify } = require("util");
 
 const User = require("./../models/userModel");
 const Role = require("./../models/roleModel");
+const {
+  ListBucketInventoryConfigurationsOutputFilterSensitiveLog,
+} = require("@aws-sdk/client-s3");
 const signToken = (objectSigned) => {
   return jwt.sign(objectSigned, process.env.JWT_SECRET, {
     expiresIn: process.env.EXPIRES_IN,

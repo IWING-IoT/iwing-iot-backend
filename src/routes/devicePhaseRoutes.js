@@ -4,6 +4,7 @@ const devicePhaseController = require("./../controllers/devicePhaseController");
 const deviceFirmwareController = require("./../controllers/deviceFirmwareController");
 const authController = require("./../controllers/authController");
 const messageController = require("./../controllers/messageController");
+const visualizationController = require("./../controllers/visualizationController");
 
 const router = express.Router();
 
@@ -71,6 +72,19 @@ router.get(
   "/:devicePhaseId/gateway",
   authController.protect,
   devicePhaseController.getNodesGateway
+);
+
+// Visualization
+router.get(
+  "/:devicePhaseId/graph/summary",
+  authController.protect,
+  visualizationController.getDeviceGraphSummary
+);
+
+router.get(
+  "/:devicePhaseId/graph/detail",
+  authController.protect,
+  visualizationController.getDeviceGraphDetail
 );
 
 module.exports = router;
