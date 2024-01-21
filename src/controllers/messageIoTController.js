@@ -11,6 +11,7 @@ const Message = require("../models/messageModel");
 const PhaseApi = require("../models/phaseApiModel");
 const Gateway = require("../models/gatewayModel");
 const Area = require("../models/areaModel");
+const Device = require("../models/deviceModel");
 
 /**
  * @return {boolean} true if (lng, lat) is in bounds
@@ -70,6 +71,13 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
   const testDevicePhase = await DevicePhase.findById(decoded.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("Invalid jwt token", 400));
 
+  // Check if token is a gateway
+  const testGateway = await Device.findById(testDevicePhase.deviceId).populate(
+    "type"
+  );
+  if (testGateway.type !== "standalone")
+    return next(new AppError("Invalid jwt token", 400));
+
   // Check if device is active
   if (testDevicePhase.status !== "active")
     return next(new AppError("Device is not active", 400));
@@ -90,8 +98,6 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
   } else {
     recievedAt = Date.now();
   }
-
-  console.log(formatData);
 
   await Message.create({
     metadata: {
@@ -173,6 +179,13 @@ exports.createGateway = catchAsync(async (req, res, next) => {
   if (testDevicePhase.status !== "active")
     return next(new AppError("Device is not active", 400));
 
+  // Check if token is a gateway
+  const testGateway = await Device.findById(testDevicePhase.deviceId).populate(
+    "type"
+  );
+  if (testGateway.type !== "gateway")
+    return next(new AppError("Invalid jwt token", 400));
+
   if (req.fields.nodeAlias) {
     // From Node
     const testNode = await DevicePhase.findOne({
@@ -186,6 +199,11 @@ exports.createGateway = catchAsync(async (req, res, next) => {
     if (testNode.status !== "active")
       return next(new AppError("Device is not active", 400));
 
+    // Check if token is a gateway
+    const node = await Device.findById(testNode.deviceId).populate("type");
+    if (testGateway.type !== "node")
+      return next(new AppError("Invalid standalonde device", 400));
+
     const apis = await PhaseApi.find({ phaseId: testDevicePhase.phaseId });
 
     const formatData = {};
@@ -193,7 +211,6 @@ exports.createGateway = catchAsync(async (req, res, next) => {
     for (const api of apis) {
       formatData[`${api.name}`] = req.fields[`${api.name}`];
     }
-    console.log(formatData);
 
     // Update Node
     await DevicePhase.findByIdAndUpdate(testNode._id, {
