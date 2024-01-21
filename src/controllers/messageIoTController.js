@@ -70,6 +70,10 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
   const testDevicePhase = await DevicePhase.findById(decoded.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("Invalid jwt token", 400));
 
+  // Check if device is active
+  if (testDevicePhase.status !== "active")
+    return next(new AppError("Device is not active", 400));
+
   const apis = await PhaseApi.find({ phaseId: testDevicePhase.phaseId });
 
   const formatData = {};
@@ -77,25 +81,37 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
     formatData[`${api.name}`] = req.fields[`${api.name}`];
   }
 
-  await Message.create({
-    metadata: {
-      devicePhaseId: decoded.devicePhaseId,
-    },
-    timestamp: req.fields.createdAt ? req.fields.createdAt : Date.now(),
-    recievedAt: Date.now(),
-    ...formatData,
-  });
+  // Receive message for testing
+  // Random plus time to receiveAt
+  let recievedAt;
+  if (req.fields.simulate && req.fields.simulate === true) {
+    let date = new Date(req.fields.createdAt);
+    recievedAt = new Date(date.getTime() + Math.random() * 1000);
+  } else {
+    recievedAt = Date.now();
+  }
 
-  await DevicePhase.findByIdAndUpdate(decoded.devicePhaseId, {
-    messageReceive: ++testDevicePhase.messageReceive,
-    lastConnection: Date.now(),
-    temperature: formatData[`temperature`]
-      ? formatData[`temperature`]
-      : testDevicePhase.temperature,
-    battery: formatData[`battery`]
-      ? formatData[`battery`]
-      : testDevicePhase.battery,
-  });
+  console.log(formatData);
+
+  // await Message.create({
+  //   metadata: {
+  //     devicePhaseId: decoded.devicePhaseId,
+  //   },
+  //   timestamp: req.fields.createdAt ? req.fields.createdAt : Date.now(),
+  //   recievedAt,
+  //   ...formatData,
+  // });
+
+  // await DevicePhase.findByIdAndUpdate(decoded.devicePhaseId, {
+  //   messageReceive: ++testDevicePhase.messageReceive,
+  //   lastConnection: Date.now(),
+  //   temperature: formatData[`temperature`]
+  //     ? formatData[`temperature`]
+  //     : testDevicePhase.temperature,
+  //   battery: formatData[`battery`]
+  //     ? formatData[`battery`]
+  //     : testDevicePhase.battery,
+  // });
   res.status(201).json();
 
   //// Check if point is in area
@@ -153,6 +169,10 @@ exports.createGateway = catchAsync(async (req, res, next) => {
   const testDevicePhase = await DevicePhase.findById(decoded.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("Invalid jwt token", 400));
 
+  // Check if device is active
+  if (testDevicePhase.status !== "active")
+    return next(new AppError("Device is not active", 400));
+
   if (req.fields.nodeAlias) {
     // From Node
     const testNode = await DevicePhase.findOne({
@@ -162,6 +182,10 @@ exports.createGateway = catchAsync(async (req, res, next) => {
 
     if (!testNode) return next(new AppError("Node not found", 404));
 
+    // Check if device is active
+    if (testNode.status !== "active")
+      return next(new AppError("Device is not active", 400));
+
     const apis = await PhaseApi.find({ phaseId: testDevicePhase.phaseId });
 
     const formatData = {};
@@ -169,6 +193,7 @@ exports.createGateway = catchAsync(async (req, res, next) => {
     for (const api of apis) {
       formatData[`${api.name}`] = req.fields[`${api.name}`];
     }
+    console.log(formatData);
 
     // Update Node
     await DevicePhase.findByIdAndUpdate(testNode._id, {
@@ -191,9 +216,9 @@ exports.createGateway = catchAsync(async (req, res, next) => {
       recievedAt: Date.now(),
       ...formatData,
     });
+
     // Update gateway
     await DevicePhase.findByIdAndUpdate(decoded.devicePhaseId, {
-      messageReceive: ++testDevicePhase.messageReceive,
       lastConnection: Date.now(),
     });
 
@@ -239,8 +264,8 @@ exports.createGateway = catchAsync(async (req, res, next) => {
       recievedAt: Date.now(),
       temperature: req.fields.temperature,
       battery: req.fields.battery,
-      lattitude: null,
-      longtitude: null,
+      latitude: null,
+      longitude: null,
     });
   }
 
