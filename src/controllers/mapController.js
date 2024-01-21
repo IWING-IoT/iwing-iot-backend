@@ -126,7 +126,7 @@ exports.getMapPosition = catchAsync(async (req, res, next) => {
       ).populate("type");
 
       formatOutput.push({
-        devicePhaseId: devicePhase._id,
+        id: devicePhase._id,
         name: devicePhase.deviceId.name,
         alias: devicePhase.alias,
         latitude: message[0].latitude,
