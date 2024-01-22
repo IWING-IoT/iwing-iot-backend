@@ -77,6 +77,16 @@ exports.addDevice = catchAsync(async (req, res, next) => {
     const testDevice = await Device.findById(device.id);
     if (!testDevice) continue;
     if (testDevice.status !== "available") continue;
+    if (device.alias && device.alias !== "") {
+      const testDevicePhase = await DevicePhase.findOne({
+        deviceId: testDevice._id,
+        phaseId: req.params.phaseId,
+        alias: device.alias,
+      });
+      if (testDevicePhase) {
+        continue;
+      }
+    }
     let devicePhaseCreate = await DevicePhase.create({
       deviceId: testDevice._id,
       phaseId: req.params.phaseId,
@@ -384,17 +394,14 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
   const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
 
-  if(req.query.type === "battery"){
-
-  }else if(req.query.type === "temperature"){
-
-  }else if(req.query.type === "message"){
-
-  }else{
+  if (req.query.type === "battery") {
+  } else if (req.query.type === "temperature") {
+  } else if (req.query.type === "message") {
+  } else {
     return next(new AppError("Invalid type", 400));
   }
 
-  res.status(200).json()
+  res.status(200).json();
 });
 
 // PATCH /api/devicePhase/:devicePhaseId (finished)
@@ -417,6 +424,14 @@ exports.editDevice = catchAsync(async (req, res, next) => {
   );
 
   if (req.fields.alias) {
+    const testDevicePhase = await DevicePhase.findOne({
+      phaseId: testPhase._id,
+      alias: req.fields.alias,
+    });
+    if (testDevicePhase) {
+      return next(new AppError("Duplicate Alias", 400));
+    }
+
     await DevicePhase.findByIdAndUpdate(req.params.devicePhaseId, {
       alias: req.fields.alias,
     });
