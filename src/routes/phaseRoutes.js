@@ -82,4 +82,17 @@ router.get(
   phaseController.downloadCsv
 );
 
+// Mark api
+router.get(
+  "/:phaseId/map/mark",
+  authController.protect,
+  mapController.getMarks
+);
+
+router.post(
+  "/:phaseId/map/mark",
+  authController.protect,
+  mapController.createMark
+);
+
 module.exports = router;

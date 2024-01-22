@@ -26,6 +26,7 @@ const firmwareVersionRouter = require("./routes/firmwareVersionRoutes");
 const messageRouter = require("./routes/messageRoutes");
 const deviceFirmwareRouter = require("./routes/deviceFirmwareRoutes");
 const areaRouter = require("./routes/areaRoutes");
+const markRouter = require("./routes/markRoutes");
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/firmwareVersion", firmwareVersionRouter);
 app.use("/api/message", messageRouter);
 app.use("/api/deviceFirmware", deviceFirmwareRouter);
 app.use("/api/area", areaRouter);
+app.use("/api/mark", markRouter);
 
 app.use(globalErrorHandler);
 

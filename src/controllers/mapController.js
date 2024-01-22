@@ -12,6 +12,7 @@ const CategoryEntity = require("../models/categoryEntityModel");
 const Attribute = require("../models/attributeModel");
 const AttributeValue = require("../models/attributeValueModel");
 const Device = require("../models/deviceModel");
+const Mark = require("../models/markModel");
 
 const turf = require("@turf/turf");
 const de9im = require("de9im");
@@ -58,6 +59,13 @@ const validateCoordinates = (coordinates) => {
     coordinates.push(coordinates[0]);
   }
 
+  return true;
+};
+
+const validateLatLong = (lat, long) => {
+  if (lat < -90 || lat > 90 || long < -180 || long > 180) {
+    return false;
+  }
   return true;
 };
 
@@ -188,7 +196,7 @@ exports.getMapPath = catchAsync(async (req, res, next) => {
       },
     ]);
 
-    if(messages.length === 0) continue;
+    if (messages.length === 0) continue;
 
     formatOutput.push({
       id: devicePhase._id,
@@ -375,5 +383,205 @@ exports.deleteArea = catchAsync(async (req, res, next) => {
   );
 
   await area.remove();
+  res.status(204).json();
+});
+
+// POST /api/phases/:phaseId/map/mark
+exports.createMark = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.phaseId)) {
+    return next(new AppError("Invalid phaseId", 400));
+  }
+  const testPhase = await Phase.findById(req.params.phaseId);
+  if (!testPhase) {
+    return next(new AppError("Phase not found", 404));
+  }
+  console.log(testPhase);
+
+  checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to create new mark.",
+    "can_edit",
+    "owner"
+  );
+
+  if (!req.fields.latitude || !req.fields.longitude) {
+    return next(new AppError("Invalid input", 400));
+  }
+
+  if (!validateLatLong(req.fields.latitude, req.fields.longitude)) {
+    return next(new AppError("Invalid latitude or longitude", 400));
+  }
+
+  let testDevicePhase = null;
+  // If has devicePhaseId
+  if (req.fields.devicePhaseId) {
+    if (!isValidObjectId(req.fields.devicePhaseId)) {
+      return next(new AppError("Invalid devicePhaseId", 400));
+    }
+    testDevicePhase = DevicePhase.findById(req.fields.devicePhaseId);
+    if (!testDevicePhase) {
+      return next(new AppError("DevicePhase not found", 404));
+    }
+  } else {
+    if (!req.fields.name) {
+      return next(new AppError("Invalid input", 400));
+    }
+  }
+
+  const testMark = await Mark.findOne({
+    devicePhaseId: req.fields.devicePhaseId,
+  });
+
+  if (testMark) {
+    return next(new AppError("DevicePhase already used", 400));
+  }
+
+  const newMark = await Mark.create({
+    name: req.fields.name ? req.fields.name : testDevicePhase.alias,
+    description: req.fields.description,
+    latitude: req.fields.latitude,
+    longitude: req.fields.longitude,
+    phaseId: req.params.phaseId,
+    devicePhaseId: req.fields.devicePhaseId,
+    createdAt: Date.now(),
+    createdBy: req.user.id,
+  });
+
+  res.status(201).json();
+});
+
+// GET /api/phases/:phaseId/map/mark
+exports.getMarks = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.phaseId)) {
+    return next(new AppError("Invalid phaseId", 400));
+  }
+
+  const testPhase = Phase.findById(req.params.phaseId);
+  if (!testPhase) {
+    return next(new AppError("Phase not found", 404));
+  }
+
+  const marks = await Mark.aggregate([
+    {
+      $match: { phaseId: new mongoose.Types.ObjectId(req.params.phaseId) },
+    },
+    {
+      $lookup: {
+        from: "devicephases",
+        localField: "devicePhaseId",
+        foreignField: "_id",
+        as: "devicePhase",
+      },
+    },
+    {
+      $unwind: {
+        path: "$devicePhase",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "devices",
+        localField: "devicePhase.deviceId",
+        foreignField: "_id",
+        as: "device",
+      },
+    },
+    {
+      $unwind: {
+        path: "$device",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "devicetypes",
+        localField: "device.type",
+        foreignField: "_id",
+        as: "device.type",
+      },
+    },
+    {
+      $unwind: {
+        path: "$device.type",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        name: 1,
+        description: 1,
+        latitude: 1,
+        longitude: 1,
+        devicePhaseId: "$devicePhase._id",
+        devicePhaseName: "$devicePhase.alias",
+        deviceName: "$device.name",
+        deviceType: "$device.type.name",
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    status: "success",
+    data: marks,
+  });
+});
+
+// PATCH /api/mark/:markId
+exports.editMark = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.markId)) {
+    return next(new AppError("Invalid markId", 400));
+  }
+  const mark = await Mark.findById(req.params.markId);
+  if (!mark) {
+    return next(new AppError("Mark not found", 404));
+  }
+
+  mark.name = req.fields.name ? req.fields.name : mark.name;
+  mark.description = req.fields.description
+    ? req.fields.description
+    : mark.description;
+
+  if (req.fields.latitude && req.fields.longitude) {
+    if (!validateLatLong(req.fields.latitude, req.fields.longitude)) {
+      return next(new AppError("Invalid latitude or longitude", 400));
+    }
+    mark.latitude = req.fields.latitude;
+    mark.longitude = req.fields.longitude;
+  }
+
+  if (req.fields.devicePhaseId) {
+    if (!isValidObjectId(req.fields.devicePhaseId)) {
+      return next(new AppError("Invalid devicePhaseId", 400));
+    }
+    const testDevicePhase = DevicePhase.findById(req.fields.devicePhaseId);
+    if (!testDevicePhase) {
+      return next(new AppError("DevicePhase not found", 404));
+    }
+    mark.devicePhaseId = req.fields.devicePhaseId;
+  }
+
+  mark.editedAt = Date.now();
+  mark.editedBy = req.user.id;
+  await mark.save();
+
+  res.status(204).json();
+});
+
+// DELETE /api/mark/:markId
+exports.deleteMark = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.markId)) {
+    return next(new AppError("Invalid markId", 400));
+  }
+  const mark = await Mark.findById(req.params.markId);
+  if (!mark) {
+    return next(new AppError("Mark not found", 404));
+  }
+
+  await mark.remove();
   res.status(204).json();
 });

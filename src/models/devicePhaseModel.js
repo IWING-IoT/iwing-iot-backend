@@ -35,6 +35,9 @@ const devicePhaseSchema = new mongoose.Schema({
   temperature: {
     type: Number,
   },
+  delay: {
+    type: Number,
+  },
   battery: {
     type: Number,
   },

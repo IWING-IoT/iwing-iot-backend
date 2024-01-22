@@ -72,10 +72,10 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
   if (!testDevicePhase) return next(new AppError("Invalid jwt token", 400));
 
   // Check if token is a gateway
-  const testGateway = await Device.findById(testDevicePhase.deviceId).populate(
-    "type"
-  );
-  if (testGateway.type !== "standalone")
+  const testStandAlone = await Device.findById(
+    testDevicePhase.deviceId
+  ).populate("type");
+  if (testStandAlone.type.name !== "standalone")
     return next(new AppError("Invalid jwt token", 400));
 
   // Check if device is active
@@ -99,11 +99,17 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
     recievedAt = Date.now();
   }
 
+  if (!formatData[`latitude`] || !formatData[`longitude`]) {
+    return next(new AppError("Invalid message", 400));
+  }
+
   await Message.create({
     metadata: {
       devicePhaseId: decoded.devicePhaseId,
     },
-    timestamp: req.fields.createdAt ? req.fields.createdAt : Date.now(),
+    timestamp: req.fields.createdAt
+      ? new Date(req.fields.createdAt)
+      : Date.now(),
     recievedAt,
     ...formatData,
   });
@@ -117,6 +123,7 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
     battery: formatData[`battery`]
       ? formatData[`battery`]
       : testDevicePhase.battery,
+    delay: recievedAt - new Date(req.fields.createdAt),
   });
   res.status(201).json();
 
@@ -183,8 +190,18 @@ exports.createGateway = catchAsync(async (req, res, next) => {
   const testGateway = await Device.findById(testDevicePhase.deviceId).populate(
     "type"
   );
-  if (testGateway.type !== "gateway")
+  if (testGateway.type.name !== "gateway")
     return next(new AppError("Invalid jwt token", 400));
+
+  // Receive message for testing
+  // Random plus time to receiveAt
+  let recievedAt;
+  if (req.fields.simulate && req.fields.simulate === true) {
+    let date = new Date(req.fields.createdAt);
+    recievedAt = new Date(date.getTime() + Math.random() * 1000);
+  } else {
+    recievedAt = Date.now();
+  }
 
   if (req.fields.nodeAlias) {
     // From Node
@@ -201,7 +218,7 @@ exports.createGateway = catchAsync(async (req, res, next) => {
 
     // Check if token is a gateway
     const node = await Device.findById(testNode.deviceId).populate("type");
-    if (testGateway.type !== "node")
+    if (node.type.name !== "node")
       return next(new AppError("Invalid standalonde device", 400));
 
     const apis = await PhaseApi.find({ phaseId: testDevicePhase.phaseId });
@@ -231,6 +248,7 @@ exports.createGateway = catchAsync(async (req, res, next) => {
       },
       timestamp: req.fields.createdAt ? req.fields.createdAt : Date.now(),
       recievedAt: Date.now(),
+      delay: recievedAt - new Date(req.fields.createdAt),
       ...formatData,
     });
 
@@ -283,6 +301,7 @@ exports.createGateway = catchAsync(async (req, res, next) => {
       battery: req.fields.battery,
       latitude: null,
       longitude: null,
+      delay: recievedAt - new Date(req.fields.createdAt),
     });
   }
 
