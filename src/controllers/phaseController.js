@@ -542,7 +542,8 @@ exports.downloadCsv = catchAsync(async (req, res, next) => {
     header: headers,
   });
   await csvWriter.writeRecords(allMessages);
-
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", "attachment; filename=out.csv");
   res.sendFile("out.csv", { root: "./" }, (err) => {
     if (err) {
       console.log(err);
