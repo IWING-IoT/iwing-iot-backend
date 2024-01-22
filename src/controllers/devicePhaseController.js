@@ -428,7 +428,7 @@ exports.editDevice = catchAsync(async (req, res, next) => {
       phaseId: testPhase._id,
       alias: req.fields.alias,
     });
-    if (testDevicePhase) {
+    if (testDevicePhase && testDevicePhase.alias !== req.fields.alias) {
       return next(new AppError("Duplicate Alias", 400));
     }
 
