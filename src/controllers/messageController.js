@@ -80,6 +80,7 @@ exports.getMessageDevice = catchAsync(async (req, res, next) => {
       limit,
       page
     ),
+    count: messages.length,
   });
 });
 
