@@ -5,6 +5,7 @@ const phaseController = require("./../controllers/phaseController");
 const phaseApiController = require("./../controllers/phaseApiController");
 const devicePhaseController = require("./../controllers/devicePhaseController");
 const mapController = require("./../controllers/mapController");
+const visualizationController = require("./../controllers/visualizationController");
 
 const router = express.Router();
 
@@ -93,6 +94,25 @@ router.post(
   "/:phaseId/map/mark",
   authController.protect,
   mapController.createMark
+);
+
+// Dashboard api
+router.get(
+  "/:phaseId/dashboard",
+  authController.protect,
+  visualizationController.getDashboard
+);
+
+router.post(
+  "/:phaseId/dashboard",
+  authController.protect,
+  visualizationController.createDashboard
+);
+
+router.put(
+  "/:phaseId/dashboard",
+  authController.protect,
+  visualizationController.editLayout
 );
 
 module.exports = router;

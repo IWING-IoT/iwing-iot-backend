@@ -36,7 +36,7 @@ const paginate = (array, page_size, page_number) => {
 
 // GET /api/devicePhase/:devicePhaseId/graph?type&range&points
 // Get data from message and send into graph x, y axis
-exports.getDeviceGraphSummary = catchAsync(async (req, res, next) => {
+exports.getDeviceGraph = catchAsync(async (req, res, next) => {
   // Check if devicePhaseId is valid
   const dataPoints = req.query.points * 1 || 5;
   if (!isValidObjectId(req.params.devicePhaseId))

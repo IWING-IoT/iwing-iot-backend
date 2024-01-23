@@ -76,15 +76,9 @@ router.get(
 
 // Visualization
 router.get(
-  "/:devicePhaseId/graph/summary",
+  "/:devicePhaseId/graph",
   authController.protect,
-  visualizationController.getDeviceGraphSummary
-);
-
-router.get(
-  "/:devicePhaseId/graph/detail",
-  authController.protect,
-  visualizationController.getDeviceGraphDetail
+  visualizationController.getDeviceGraph
 );
 
 module.exports = router;
