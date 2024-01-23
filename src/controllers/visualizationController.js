@@ -34,7 +34,7 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
-// GET /api/devicePhase/:devicePhaseId/graph/summary?type&time&points
+// GET /api/devicePhase/:devicePhaseId/graph?type&range&points
 // Get data from message and send into graph x, y axis
 exports.getDeviceGraphSummary = catchAsync(async (req, res, next) => {
   // Check if devicePhaseId is valid
@@ -46,7 +46,7 @@ exports.getDeviceGraphSummary = catchAsync(async (req, res, next) => {
   if (!devicePhase) return next(new AppError("Invalid devicePhaseId", 400));
 
   // Check is message is cover range of time
-  
+
   const messages = await Message.aggregate([
     {
       $match: {
@@ -76,7 +76,27 @@ exports.getDeviceGraphSummary = catchAsync(async (req, res, next) => {
   res.status(200).json();
 });
 
-// GET /api/devicePhase/:devicePhaseId/graph/detail
-exports.getDeviceGraphDetail = catchAsync(async (req, res, next) => {
+// GET /api/phase/:phaseId/visualization
+exports.getDashboard = catchAsync(async (req, res, next) => {
   res.status(200).json();
+});
+
+// POST /api/phase/:phaseId/visualization
+exports.createDashboard = catchAsync(async (req, res, next) => {
+  res.status(201).json();
+});
+
+// PATCH /api/vizualization/:visualizationId
+exports.editDashboard = catchAsync(async (req, res, next) => {
+  res.status(204).json();
+});
+
+// PUT /api/phase/:phaseId/visualization
+exports.editLayout = catchAsync(async (req, res, next) => {
+  res.status(204).json();
+});
+
+// DELETE /api/vizualization/:visualizationId
+exports.deleteDashboard = catchAsync(async (req, res, next) => {
+  res.status(204).json();
 });

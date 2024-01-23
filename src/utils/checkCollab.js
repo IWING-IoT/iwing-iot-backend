@@ -29,5 +29,5 @@ module.exports = async (next, projectId, userId, message, ...permission) => {
     }
   }
 
-  if (!checkPermission) return next(new AppError(message, 401));
+  if (!checkPermission) return next(new AppError(message, 403));
 };
