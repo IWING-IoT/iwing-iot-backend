@@ -420,22 +420,21 @@ exports.createMark = catchAsync(async (req, res, next) => {
     if (!isValidObjectId(req.fields.devicePhaseId)) {
       return next(new AppError("Invalid devicePhaseId", 400));
     }
-    testDevicePhase = DevicePhase.findById(req.fields.devicePhaseId);
+    testDevicePhase = await DevicePhase.findById(req.fields.devicePhaseId);
     if (!testDevicePhase) {
       return next(new AppError("DevicePhase not found", 404));
+    }
+    const testMark = await Mark.findOne({
+      devicePhaseId: req.fields.devicePhaseId,
+    });
+
+    if (testMark) {
+      return next(new AppError("DevicePhase already used", 400));
     }
   } else {
     if (!req.fields.name) {
       return next(new AppError("Invalid input", 400));
     }
-  }
-
-  const testMark = await Mark.findOne({
-    devicePhaseId: req.fields.devicePhaseId,
-  });
-
-  if (testMark) {
-    return next(new AppError("DevicePhase already used", 400));
   }
 
   const newMark = await Mark.create({

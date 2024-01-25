@@ -12,6 +12,7 @@ const User = require("./../models/userModel");
 const PhaseApi = require("../models/phaseApiModel");
 const Message = require("../models/messageModel");
 const DevicePhase = require("../models/devicePhaseModel");
+const Device = require("../models/deviceModel");
 
 const Upload = require("./../utils/upload");
 const fs = require("fs");
@@ -160,6 +161,20 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
         endedAt: Date.now(),
       }
     );
+  }
+
+  // Change device phase to archived
+  const devicePhases = await DevicePhase.updateMany(
+    { phaseId: req.params.phaseId },
+    { status: "archived" }
+  );
+  const testDevicePhases = await DevicePhase.find({
+    phaseId: req.params.phaseId,
+  });
+
+  // Change device status to active
+  for (const device of testDevicePhases) {
+    await Device.updateMany({ _id: device.deviceId }, { status: "active" });
   }
 
   res.status(204).json();

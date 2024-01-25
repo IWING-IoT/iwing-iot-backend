@@ -36,17 +36,50 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
+const findAverage = (datas, dataPoints, dataType) => {
+  const data = [];
+  const labels = [];
+  const groupNumber = Math.floor(datas.length / dataPoints);
+  console.log(groupNumber);
+  console.log(data.length);
+  for (let i = 0; i < dataPoints; i++) {
+    let group = datas.slice(i * groupNumber, (i + 1) * groupNumber);
+    if (i === dataPoints - 1) {
+      group = datas.slice(i * groupNumber);
+    }
+    let sum = 0;
+    let count = 0;
+    // console.log(group);
+    for (const message of group) {
+      console.log(message);
+      sum += message[`${dataType}`] ? message[`${dataType}`] : 0;
+
+      if (message[`${dataType}`]) count++;
+    }
+    const avg = sum / count;
+    data.push(avg);
+    labels.push(new Date(group[0].timestamp));
+  }
+  console.log(data);
+
+  return { data, labels };
+};
+
 // GET /api/devicePhase/:devicePhaseId/graph?type&range&points
 // Get data from message and send into graph x, y axis
 exports.getDeviceGraph = catchAsync(async (req, res, next) => {
   // Check if devicePhaseId is valid
-  const dataPoints = req.query.points * 1 || 5;
+  const dataPoints = req.query.point * 1 || 5;
+
   if (!isValidObjectId(req.params.devicePhaseId))
     return next(new AppError("Invalid devicePhaseId", 400));
 
   const devicePhase = await DevicePhase.findById(req.params.devicePhaseId);
   if (!devicePhase) return next(new AppError("Invalid devicePhaseId", 400));
 
+  if (req.query.type !== "temperature" && req.query.type !== "battery") {
+    return next(new AppError("Invalid type", 400));
+  }
   // Check is message is cover range of time
 
   const messages = await Message.aggregate([
@@ -65,17 +98,151 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       },
     },
   ]);
-  console.log(messages);
-  console.log(messages[0].max - messages[0].min);
+
+  let data = [];
+  let labels = [];
   if (
     req.query.range === "month" &&
     new Date(messages[0].max) - new Date(messages[0].min) >
       30 * 24 * 60 * 60 * 1000
   ) {
-    console.log(true);
+    // Get message from last 30 days and find average of temperature by dividing range by dataPoints
+
+    const messages = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+          timestamp: {
+            $gte: new Date(new Date() - 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          min: { $min: "$timestamp" },
+          max: { $max: "$timestamp" },
+        },
+      },
+    ]);
+
+    const result = findAverage(messages, dataPoints, req.query.type);
+    data = result.data;
+    labels = result.labels;
+  } else if (
+    req.query.range === "week" &&
+    new Date(messages[0].max) - new Date(messages[0].min) >
+      7 * 24 * 60 * 60 * 1000
+  ) {
+    // Get message from last 7 days
+
+    const messages = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+          timestamp: {
+            $gte: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          min: { $min: "$timestamp" },
+          max: { $max: "$timestamp" },
+        },
+      },
+    ]);
+    const result = findAverage(messages, dataPoints, req.query.type);
+    data = result.data;
+    labels = result.labels;
+  } else if (
+    req.query.range === "day" &&
+    new Date(messages[0].max) - new Date(messages[0].min) > 24 * 60 * 60 * 1000
+  ) {
+    // Get message from last 24 hours
+
+    const messages = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+          timestamp: {
+            $gte: new Date(new Date() - 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          min: { $min: "$timestamp" },
+          max: { $max: "$timestamp" },
+        },
+      },
+    ]);
+    const result = findAverage(messages, dataPoints, req.query.type);
+    data = result.data;
+    labels = result.labels;
+  } else if (
+    req.query.range === "hour" &&
+    new Date(messages[0].max) - new Date(messages[0].min) > 60 * 60 * 1000
+  ) {
+    // Get message from last 60 minutes
+
+    const messages = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+          timestamp: {
+            $gte: new Date(new Date() - 60 * 60 * 1000),
+          },
+        },
+      },
+    ]);
+
+    const result = findAverage(messages, dataPoints, req.query.type);
+    data = result.data;
+    labels = result.labels;
+  } else if (
+    req.query.range === "minute" &&
+    new Date(messages[0].max) - new Date(messages[0].min) > 60 * 1000
+  ) {
+    // Get message from last 60 seconds
+
+    const messages = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+          timestamp: {
+            $gte: new Date(new Date() - 60 * 1000),
+          },
+        },
+      },
+    ]);
+
+    const result = findAverage(messages, dataPoints, req.query.type);
+    data = result.data;
+    labels = result.labels;
+  } else {
+    return next(new AppError("Not enough data", 400));
   }
 
-  res.status(200).json();
+  res.status(200).json({
+    status: "success",
+    data: {
+      y: data,
+      x: labels,
+    },
+  });
 });
 
 // GET /api/phase/:phaseId/visualization
@@ -122,7 +289,6 @@ exports.getDeviceVisualization = catchAsync(async (req, res, next) => {
   let nodeCount = 0;
   let totalMinute = 0;
 
-
   const gatewayTypeId = await DeviceType.findOne({ name: "gateway" });
   const standaloneTypeId = await DeviceType.findOne({ name: "standalone" });
   const nodeTypeId = await DeviceType.findOne({ name: "node" });
@@ -152,15 +318,13 @@ exports.getDeviceVisualization = catchAsync(async (req, res, next) => {
         },
       ]);
 
-  
       if (messages.length > 0) {
         const totalMessages = messages[0].total;
         const startTime = new Date(messages[0].min);
         const endTime = new Date(messages[0].max);
         // Minutes between startTime and endTime
         const diffInMinutes = (endTime - startTime) / (1000 * 60);
-    
-    
+
         if (diffInMinutes > 0) {
           var avgMessagesPerMinute = totalMessages / diffInMinutes;
           totalMinute += avgMessagesPerMinute;
