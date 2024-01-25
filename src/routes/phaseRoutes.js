@@ -115,4 +115,10 @@ router.put(
   visualizationController.editLayout
 );
 
+router.get(
+  "/:phaseId/visualization/device",
+  authController.protect,
+  visualizationController.getDeviceVisualization
+);
+
 module.exports = router;

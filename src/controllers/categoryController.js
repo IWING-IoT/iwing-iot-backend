@@ -135,21 +135,21 @@ exports.createCategory = catchAsync(async (req, res, next) => {
 
 // GET /api/project/:projectId/category (finished)
 exports.getCategories = catchAsync(async (req, res, next) => {
-  await checkCollab(
-    next,
-    req.params.projectId,
-    req.user.id,
-    "You do not have permission to create a new category.",
-    "can_edit",
-    "owner",
-    "can_view"
-  );
-
   if (!isValidObjectId(req.params.projectId))
     return next(new AppError("Invalid projectId", 400));
 
   const testProject = await Project.findById(req.params.projectId);
   if (!testProject) return next(new AppError("Project not found", 404));
+
+  await checkCollab(
+    next,
+    req.params.projectId,
+    req.user.id,
+    "You do not have permission to read a new category.",
+    "can_edit",
+    "owner",
+    "can_view"
+  );
 
   const categories = await Category.aggregate([
     {
@@ -183,7 +183,7 @@ exports.getCategoryEntry = catchAsync(async (req, res, next) => {
     next,
     testCategory.projectId,
     req.user.id,
-    "You do not have permission to create a new category.",
+    "You do not have permission to get categories.",
     "can_edit",
     "owner",
     "can_view"
@@ -314,7 +314,7 @@ exports.createEntry = catchAsync(async (req, res, next) => {
     next,
     testCategory.projectId,
     req.user.id,
-    "You do not have permission to create a new category.",
+    "You do not have permission to create a new entry.",
     "can_edit",
     "owner"
   );
@@ -389,7 +389,7 @@ exports.getCategoryMainAttribute = catchAsync(async (req, res, next) => {
     next,
     testCategory.projectId,
     req.user.id,
-    "You do not have permission to create a new category.",
+    "You do not have permission to get category.",
     "can_edit",
     "owner",
     "can_view"
@@ -438,7 +438,7 @@ exports.editCategory = catchAsync(async (req, res, next) => {
     next,
     testCategory.projectId,
     req.user.id,
-    "You do not have permission to create a new category.",
+    "You do not have permission to edit a category.",
     "can_edit",
     "owner"
   );
