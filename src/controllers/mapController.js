@@ -369,10 +369,11 @@ exports.deleteArea = catchAsync(async (req, res, next) => {
   if (!area) {
     return next(new AppError("Area not found", 404));
   }
-  const testPhase = Phase.findById(area.phaseId);
+  const testPhase = await Phase.findById(area.phaseId);
   if (!testPhase) {
     return next(new AppError("Phase not found", 404));
   }
+
   checkCollab(
     next,
     testPhase.projectId,
@@ -382,7 +383,7 @@ exports.deleteArea = catchAsync(async (req, res, next) => {
     "owner"
   );
 
-  await area.remove();
+  await Area.deleteOne({ _id: req.params.areaId });
   res.status(204).json();
 });
 
