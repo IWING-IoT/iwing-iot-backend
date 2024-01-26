@@ -174,7 +174,8 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
 
   // Change device status to active
   for (const device of testDevicePhases) {
-    await Device.updateMany({ _id: device.deviceId }, { status: "active" });
+    console.log(device);
+    await Device.updateMany({ _id: device.deviceId }, { status: "available" });
   }
 
   res.status(204).json();
@@ -211,11 +212,21 @@ exports.deleted = catchAsync(async (req, res, next) => {
     "can_edit"
   );
 
+  // Delete message and devicePhase
+
+  // Change device phase to archived
+  const devicePhases = await DevicePhase.deleteMany({
+    phaseId: req.params.phaseId,
+  });
+
+
+
   await Phase.findByIdAndUpdate(req.params.phaseId, {
     isDeleted: true,
     deletedAt: Date.now(),
     isActive: false,
   });
+
   res.status(204).json();
 });
 
