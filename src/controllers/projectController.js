@@ -9,6 +9,7 @@ const Collaborator = require("./../models/collaboratorModel");
 const Phase = require("./../models/phaseModel");
 
 const AppError = require("../utils/appError");
+const DevicePhase = require("../models/devicePhaseModel");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -270,16 +271,29 @@ exports.archived = catchAsync(async (req, res, next) => {
       new AppError("You do not have permission to archive project", 403)
     );
 
-  // Update all phase to inactive
-  const updatedPhase = await Phase.updateMany(
-    { projectId: req.params.projectId },
-    {
+  // Update all devicePhase to archived and return device free
+
+  const phases = await Phase.find({ projectId: req.params.projectId });
+  for (const phase of phases) {
+    const devicePhases = await DevicePhase.find({ phaseId: phase._id });
+    for (const devicePhase of devicePhases) {
+      await DevicePhase.findByIdAndUpdate(devicePhase.deviceId, {
+        status: "archived",
+        editedBy: req.user._id,
+        editedAt: Date.now(),
+      });
+
+      await Device.findByIdAndUpdate(devicePhase.deviceId, {
+        status: "available",
+      });
+    }
+    await Phase.findByIdAndUpdate(phase._id, {
       isActive: false,
       editedBy: req.user._id,
       editedAt: Date.now(),
       endedAt: Date.now(),
-    }
-  );
+    });
+  }
 
   const updatedProject = await Project.findOneAndUpdate(
     {
