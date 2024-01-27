@@ -121,4 +121,10 @@ router.get(
   visualizationController.getDeviceVisualization
 );
 
+router.get(
+  "/:phaseId/visualization/battery",
+  authController.protect,
+  visualizationController.getBatteryVisualization
+);
+
 module.exports = router;

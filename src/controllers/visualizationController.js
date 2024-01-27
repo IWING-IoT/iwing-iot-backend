@@ -7,6 +7,7 @@ const DevicePhase = require("../models/devicePhaseModel");
 const Message = require("../models/messageModel");
 const Phase = require("../models/phaseModel");
 const DeviceType = require("../models/deviceTypeModel");
+const checkCollab = require("../utils/checkCollab");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -275,6 +276,16 @@ exports.getDeviceVisualization = catchAsync(async (req, res, next) => {
   const testPhase = await Phase.findById(req.params.phaseId);
   if (!testPhase) return next(new AppError("Invalid phaseId", 400));
 
+  checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to access this project.",
+    "can_view",
+    "can_edit",
+    "owner"
+  );
+
   const devicePhase = await DevicePhase.find({
     phaseId: req.params.phaseId,
   }).populate("deviceId");
@@ -360,5 +371,55 @@ exports.getDeviceVisualization = catchAsync(async (req, res, next) => {
         totalMinute /
         (activeGateway.length + activeStandalone.length + activeNode.length),
     },
+  });
+});
+
+// GET /api/phase/:phaseId/visualization/battery
+
+exports.getBatteryVisualization = catchAsync(async (req, res, next) => {
+  const threshold = req.query.threshold || 20;
+  if (!isValidObjectId(req.params.phaseId))
+    return next(new AppError("Invalid phaseId", 400));
+
+  const testPhase = await Phase.findById(req.params.phaseId);
+  if (!testPhase) return next(new AppError("Invalid phaseId", 400));
+
+  checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to access this project.",
+    "can_view",
+    "can_edit",
+    "owner"
+  );
+
+  // Get device phase has battery lower than threshold
+
+  const devicePhase = await DevicePhase.aggregate([
+    {
+      $match: {
+        phaseId: new mongoose.Types.ObjectId(req.params.phaseId),
+        battery: { $lte: parseInt(threshold) },
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        battery: 1,
+        alias: 1,
+        _id: 0,
+      },
+    },
+    {
+      $sort: {
+        battery: 1,
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    stauts: "success",
+    data: devicePhase,
   });
 });
