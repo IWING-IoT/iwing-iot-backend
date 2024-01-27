@@ -90,7 +90,7 @@ exports.getFirmware = catchAsync(async (req, res, next) => {
     }).sort({ createdAt: -1 });
 
     if (firmwareVersions.length === 0) {
-      firmware.lastUpdate = firmware.createdAt
+      firmware.lastUpdate = firmware.editedAt
         ? firmware.editedAt
         : firmware.createdAt;
     } else {
