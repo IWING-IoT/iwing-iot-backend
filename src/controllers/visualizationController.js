@@ -39,28 +39,36 @@ const paginate = (array, page_size, page_number) => {
 const findAverage = (datas, dataPoints, dataType) => {
   const data = [];
   const labels = [];
-  const groupNumber = Math.floor(datas.length / dataPoints);
-  console.log(groupNumber);
-  console.log(data.length);
+  let groupNumber = Math.floor(datas.length / dataPoints);
+
+  if (datas.length < dataPoints) {
+    // Duplicate data
+    while (datas.length <= dataPoints) {
+      datas.push(datas[0]);
+    }
+    groupNumber = Math.floor(datas.length / dataPoints);
+  }
+
   for (let i = 0; i < dataPoints; i++) {
     let group = datas.slice(i * groupNumber, (i + 1) * groupNumber);
+
     if (i === dataPoints - 1) {
       group = datas.slice(i * groupNumber);
     }
     let sum = 0;
     let count = 0;
-    // console.log(group);
+
     for (const message of group) {
-      console.log(message);
       sum += message[`${dataType}`] ? message[`${dataType}`] : 0;
 
       if (message[`${dataType}`]) count++;
     }
     const avg = sum / count;
     data.push(avg);
+
     labels.push(new Date(group[0].timestamp));
   }
-  console.log(data);
+  // console.log(data);
 
   return { data, labels };
 };
@@ -119,14 +127,9 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
           },
         },
       },
-      {
-        $group: {
-          _id: null,
-          min: { $min: "$timestamp" },
-          max: { $max: "$timestamp" },
-        },
-      },
     ]);
+    if (messages.length === 0)
+      return next(new AppError("Not enough data", 400));
 
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
@@ -149,14 +152,9 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
           },
         },
       },
-      {
-        $group: {
-          _id: null,
-          min: { $min: "$timestamp" },
-          max: { $max: "$timestamp" },
-        },
-      },
     ]);
+    if (messages.length === 0)
+      return next(new AppError("Not enough data", 400));
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
     labels = result.labels;
@@ -177,14 +175,10 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
           },
         },
       },
-      {
-        $group: {
-          _id: null,
-          min: { $min: "$timestamp" },
-          max: { $max: "$timestamp" },
-        },
-      },
     ]);
+    console.log(messages);
+    if (messages.length === 0)
+      return next(new AppError("Not enough data", 400));
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
     labels = result.labels;
@@ -206,6 +200,8 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         },
       },
     ]);
+    if (messages.length === 0)
+      return next(new AppError("Not enough data", 400));
 
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
@@ -228,6 +224,8 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         },
       },
     ]);
+    if (messages.length === 0)
+      return next(new AppError("Not enough data", 400));
 
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
