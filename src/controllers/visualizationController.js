@@ -110,6 +110,8 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
 
   let data = [];
   let labels = [];
+  let change = 0;
+  let sign = "positive";
   if (
     req.query.range === "month" &&
     new Date(messages[0].max) - new Date(messages[0].min) >
@@ -135,6 +137,41 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
     labels = result.labels;
+
+    // Compare avg between this month and last month
+
+    const messagesLast = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+          timestamp: {
+            $gte: new Date(new Date() - 60 * 24 * 60 * 60 * 1000),
+            $lte: new Date(new Date() - 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+    ]);
+    if (messagesLast.length === 0) {
+      sign = "positive";
+      change = 100;
+    } else {
+      const lastMonthAvg =
+        messagesLast.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`];
+        }, 0) / messagesLast.length;
+
+      change =
+        ((data.reduce((acc, cur) => {
+          return acc + cur;
+        }, 0) /
+          data.length -
+          lastMonthAvg) /
+          lastMonthAvg) *
+        100;
+      if (change < 0) sign = "negative";
+    }
   } else if (
     req.query.range === "week" &&
     new Date(messages[0].max) - new Date(messages[0].min) >
@@ -159,6 +196,42 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
     labels = result.labels;
+
+    // Compare avg between this week and last week
+
+    const messagesLast = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+          timestamp: {
+            $gte: new Date(new Date() - 14 * 24 * 60 * 60 * 1000),
+            $lte: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+    ]);
+
+    if (messagesLast.length === 0) {
+      sign = "positive";
+      change = 100;
+    } else {
+      const lastMonthAvg =
+        messagesLast.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`];
+        }, 0) / messagesLast.length;
+
+      change =
+        ((data.reduce((acc, cur) => {
+          return acc + cur;
+        }, 0) /
+          data.length -
+          lastMonthAvg) /
+          lastMonthAvg) *
+        100;
+      if (change < 0) sign = "negative";
+    }
   } else if (
     req.query.range === "day" &&
     new Date(messages[0].max) - new Date(messages[0].min) > 24 * 60 * 60 * 1000
@@ -177,12 +250,47 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         },
       },
     ]);
-    console.log(messages);
+
     if (messages.length === 0)
       return next(new AppError("Not enough data", 400));
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
     labels = result.labels;
+
+    // Compare avg between this day and last day
+
+    const messagesLast = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+          timestamp: {
+            $gte: new Date(new Date() - 48 * 60 * 60 * 1000),
+            $lte: new Date(new Date() - 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+    ]);
+    if (messagesLast.length === 0) {
+      sign = "positive";
+      change = 100;
+    } else {
+      const lastMonthAvg =
+        messagesLast.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`];
+        }, 0) / messagesLast.length;
+
+      change =
+        ((data.reduce((acc, cur) => {
+          return acc + cur;
+        }, 0) /
+          data.length -
+          lastMonthAvg) /
+          lastMonthAvg) *
+        100;
+      if (change < 0) sign = "negative";
+    }
   } else if (
     req.query.range === "hour" &&
     new Date(messages[0].max) - new Date(messages[0].min) > 60 * 60 * 1000
@@ -207,6 +315,42 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
     labels = result.labels;
+
+    // Compare avg between this hour and last hour
+
+    const messagesLast = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+
+          timestamp: {
+            $gte: new Date(new Date() - 120 * 60 * 1000),
+            $lte: new Date(new Date() - 60 * 60 * 1000),
+          },
+        },
+      },
+    ]);
+    if (messagesLast.length === 0) {
+      sign = "positive";
+      change = 100;
+    } else {
+      const lastMonthAvg =
+        messagesLast.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`];
+        }, 0) / messagesLast.length;
+
+      change =
+        ((data.reduce((acc, cur) => {
+          return acc + cur;
+        }, 0) /
+          data.length -
+          lastMonthAvg) /
+          lastMonthAvg) *
+        100;
+      if (change < 0) sign = "negative";
+    }
   } else if (
     req.query.range === "minute" &&
     new Date(messages[0].max) - new Date(messages[0].min) > 60 * 1000
@@ -231,6 +375,42 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
     labels = result.labels;
+
+    // Compare avg between this minute and last minute
+
+    const messagesLast = await Message.aggregate([
+      {
+        $match: {
+          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+            req.params.devicePhaseId
+          ),
+
+          timestamp: {
+            $gte: new Date(new Date() - 120 * 1000),
+            $lte: new Date(new Date() - 60 * 1000),
+          },
+        },
+      },
+    ]);
+    if (messagesLast.length === 0) {
+      sign = "positive";
+      change = 100;
+    } else {
+      const lastMonthAvg =
+        messagesLast.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`];
+        }, 0) / messagesLast.length;
+
+      change =
+        ((data.reduce((acc, cur) => {
+          return acc + cur;
+        }, 0) /
+          data.length -
+          lastMonthAvg) /
+          lastMonthAvg) *
+        100;
+      if (change < 0) sign = "negative";
+    }
   } else {
     return next(new AppError("Not enough data", 400));
   }
@@ -240,6 +420,8 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
     data: {
       y: data,
       x: labels,
+      change,
+      sign,
     },
   });
 });
@@ -375,7 +557,6 @@ exports.getDeviceVisualization = catchAsync(async (req, res, next) => {
 });
 
 // GET /api/phase/:phaseId/visualization/battery
-
 exports.getBatteryVisualization = catchAsync(async (req, res, next) => {
   const threshold = req.query.threshold || 20;
   if (!isValidObjectId(req.params.phaseId))
