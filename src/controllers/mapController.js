@@ -342,7 +342,7 @@ exports.editArea = catchAsync(async (req, res, next) => {
     "owner"
   );
 
-  if (!req.fields.name || !req.fields.coordinates || !req.fields.description) {
+  if (!req.fields.name || !req.fields.coordinates) {
     return next(new AppError("Invalid input", 400));
   }
 
@@ -351,7 +351,10 @@ exports.editArea = catchAsync(async (req, res, next) => {
   }
 
   area.name = req.fields.name;
-  area.description = req.fields.description;
+
+  area.description = req.fields.description
+    ? req.fields.description
+    : area.description;
   area.coordinates = req.fields.coordinates;
   area.isActive = req.fields.isActive;
   area.editedAt = new Date();
