@@ -364,7 +364,7 @@ exports.createEntry = catchAsync(async (req, res, next) => {
     const attributeValue = await AttributeValue.create({
       categoryEntityId: createEntry._id,
       attributeId: dataAttribute._id,
-      value: req.fields[`${attribute}`],
+      value: req.fields[`${attribute}`] ? req.fields[`${attribute}`] : "",
     });
   }
 
