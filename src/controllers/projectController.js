@@ -7,9 +7,20 @@ const Template = require("./../models/templateModel");
 const Permission = require("./../models/permissionModel");
 const Collaborator = require("./../models/collaboratorModel");
 const Phase = require("./../models/phaseModel");
+const Device = require("./../models/deviceModel");
+const Message = require("./../models/messageModel");
+const DeviceFirmware = require("./../models/deviceFirmwareModel");
+const CategoryEntity = require("./../models/categoryEntityModel");
+const Category = require("./../models/categoryModel");
+const AttributeValue = require("./../models/attributeValueModel");
+const Attribute = require("./../models/attributeModel");
+const Area = require("./../models/areaModel");
+const Mark = require("./../models/markModel");
+const Gateway = require("./../models/gatewayModel");
 
 const AppError = require("../utils/appError");
 const DevicePhase = require("../models/devicePhaseModel");
+const PhaseApi = require("../models/phaseApiModel");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -25,6 +36,7 @@ const compareId = (id1, id2) => {
   return id1.toString() === id2.toString();
 };
 
+// GET /api/project/
 exports.getProjects = catchAsync(async (req, res, next) => {
   // Query project that matching requirement
   const match = {
@@ -119,6 +131,7 @@ exports.getProjects = catchAsync(async (req, res, next) => {
   });
 });
 
+// POST /api/project
 exports.createProject = catchAsync(async (req, res, next) => {
   const project = req.fields;
   // Check all input requirement
@@ -163,6 +176,7 @@ exports.createProject = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
+// GET /api/project/:projectId
 exports.getInfo = catchAsync(async (req, res, next) => {
   const projectId = req.params.projectId;
   // Check ว่า userid มีสิทธิได้ getinfo รึป่าว
@@ -233,43 +247,29 @@ exports.getInfo = catchAsync(async (req, res, next) => {
       new AppError("You do not have permission to access this project", 403)
     );
 
-  const activePhaseId = await Phase.findOne({ projectId, isActive: true });
-
   res.status(200).json({
     status: "success",
     data: {
-      activePhaseId: activePhaseId ? activePhaseId._id : null,
       ...collaboratorProject[0],
     },
   });
 });
 
+// PATCH /api/project/:projectId/archived
 exports.archived = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.projectId))
     return next(new AppError("Invalid projectId", 404));
 
-  const projectCollab = await Collaborator.findOne({
-    projectId: req.params.projectId,
-    userId: req.user._id,
-  });
-
   if (!req.fields.isArchived)
     return next(new AppError("Cannot unarchived project", 400));
 
-  if (!projectCollab)
-    return next(
-      new AppError("You do not have permission to access this project", 403)
-    );
-
-  const can_edit = await Permission.findOne({ name: "can_edit" });
-  const owner = await Permission.findOne({ name: "owner" });
-  if (
-    !compareId(projectCollab.permissionId, can_edit._id) &&
-    !compareId(projectCollab.permissionId, owner._id)
-  )
-    return next(
-      new AppError("You do not have permission to archive project", 403)
-    );
+  await checkCollab(
+    next,
+    req.params.projectId,
+    req.user.id,
+    "You do not have permission to archived project",
+    "owner"
+  );
 
   // Update all devicePhase to archived and return device free
 
@@ -277,7 +277,7 @@ exports.archived = catchAsync(async (req, res, next) => {
   for (const phase of phases) {
     const devicePhases = await DevicePhase.find({ phaseId: phase._id });
     for (const devicePhase of devicePhases) {
-      await DevicePhase.findByIdAndUpdate(devicePhase.deviceId, {
+      await DevicePhase.findByIdAndUpdate(devicePhase._id, {
         status: "archived",
         editedBy: req.user._id,
         editedAt: Date.now(),
@@ -309,24 +309,18 @@ exports.archived = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
+// DELETE /api/project/:projectId
 exports.deleted = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.projectId))
     return next(new AppError("Invalid projectId", 401));
 
-  const projectCollab = await Collaborator.findOne({
-    projectId: req.params.projectId,
-    userId: req.user._id,
-  });
-
-  if (!projectCollab)
-    return next(
-      new AppError("You do not have permission to access this project", 403)
-    );
-  const owner = await Permission.findOne({ name: "owner" });
-  if (!compareId(projectCollab.permissionId, owner._id))
-    return next(
-      new AppError("You do not have permission to delete project", 403)
-    );
+  await checkCollab(
+    next,
+    req.params.projectId,
+    req.user.id,
+    "You do not have permission to delete project",
+    "owner"
+  );
 
   const updatedProject = await Project.findOneAndUpdate(
     {
@@ -338,44 +332,73 @@ exports.deleted = catchAsync(async (req, res, next) => {
     }
   );
 
-  // Update phase to inactive
-  const updatePhase = await Phase.updateMany(
-    {
-      projectId: req.params.projectId,
-    },
-    {
+  // Delete category
+  // Delete entity value
+  const categories = await Category.find({ projectId: req.params.projectId });
+  for (const category of categories) {
+    const entities = await CategoryEntity.find({ categoryId: category._id });
+    for (const entity of entities) {
+      await AttributeValue.deleteMany({ entityId: entity._id });
+      await CategoryEntity.findByIdAndDelete(entity._id);
+    }
+    await Attribute.deleteMany({ categoryId: category._id });
+    await Category.findByIdAndDelete(category._id);
+  }
+
+  // Delete collaborator
+  await Collaborator.deleteMany({ projectId: req.params.projectId });
+
+  // Update all devicePhase to archived and return device free
+
+  const phases = await Phase.find({ projectId: req.params.projectId });
+  for (const phase of phases) {
+    const devicePhases = await DevicePhase.find({
+      phaseId: phase._id,
+    }).populate("deviceId");
+
+    for (const devicePhase of devicePhases) {
+      const type = await DeviceType.findById(devicePhase.deviceId.type);
+      if (type.name === "gateway") {
+        await Gateway.deleteMany({ gatewayId: devicePhase.deviceId._id });
+      }
+      await DevicePhase.deleteMany({ _id: devicePhase.deviceId });
+
+      // Delete devicephase message
+      await Message.deleteMany({ "metadata.devicePhaseId": devicePhase._id });
+
+      // Delete deviceFirmware
+      await DeviceFirmware.deleteMany({ devicePhaseId: devicePhase._id });
+
+      await Device.findByIdAndUpdate(devicePhase.deviceId, {
+        status: "available",
+      });
+    }
+    await Mark.deleteMany({ phaseId: phase._id });
+    await Area.deleteMany({ phaseId: phase._id });
+    await PhaseApi.deleteMany({ phaseId: phase._id });
+    await Phase.findByIdAndUpdate(phase._id, {
+      isActive: false,
       isDeleted: true,
       deletedAt: Date.now(),
-    }
-  );
-  // change active phase endDate to present
+    });
+  }
 
   res.status(204).json();
 });
 
+// PATCH /api/project/:projectId
 exports.edited = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.projectId))
     return next(new AppError("Invalid projectId", 404));
 
-  const projectCollab = await Collaborator.findOne({
-    projectId: req.params.projectId,
-    userId: req.user._id,
-  });
-
-  if (!projectCollab)
-    return next(
-      new AppError("You do not have permission to access this project", 403)
-    );
-
-  const can_edit = await Permission.findOne({ name: "can_edit" });
-  const owner = await Permission.findOne({ name: "owner" });
-  if (
-    !compareId(projectCollab.permissionId, can_edit._id) &&
-    !compareId(projectCollab.permissionId, owner._id)
-  )
-    return next(
-      new AppError("You do not have permission to edit project", 403)
-    );
+  await checkCollab(
+    next,
+    req.params.projectId,
+    req.user.id,
+    "You do not have permission to edit project",
+    "owner",
+    "can_edit"
+  );
 
   const updatedProject = await Project.findOneAndUpdate(
     {
