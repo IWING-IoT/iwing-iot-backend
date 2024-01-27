@@ -583,6 +583,6 @@ exports.deleteMark = catchAsync(async (req, res, next) => {
     return next(new AppError("Mark not found", 404));
   }
 
-  await mark.remove();
+  await Mark.deleteOne({ _id: req.params.markId });
   res.status(204).json();
 });
