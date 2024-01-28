@@ -106,7 +106,15 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       },
     },
   ]);
-  if (messages.length === 0) return next(new AppError("Not enough data", 400));
+  if (messages.length === 0) {
+    res.status(200).json({
+      status: "success",
+      data: {
+        isEnough: false,
+      },
+    });
+    return;
+  }
 
   let data = [];
   let labels = [];
@@ -133,8 +141,15 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       },
     ]);
 
-    if (messages.length === 0)
-      return next(new AppError("Not enough data", 400));
+    if (messages.length === 0) {
+      res.status(200).json({
+        status: "success",
+        data: {
+          isEnough: false,
+        },
+      });
+      return;
+    }
 
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
@@ -194,8 +209,15 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         },
       },
     ]);
-    if (messages.length === 0)
-      return next(new AppError("Not enough data", 400));
+    if (messages.length === 0) {
+      res.status(200).json({
+        status: "success",
+        data: {
+          isEnough: false,
+        },
+      });
+      return;
+    }
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
     labels = result.labels;
@@ -255,8 +277,15 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       },
     ]);
 
-    if (messages.length === 0)
-      return next(new AppError("Not enough data", 400));
+    if (messages.length === 0) {
+      res.status(200).json({
+        status: "success",
+        data: {
+          isEnough: false,
+        },
+      });
+      return;
+    }
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
     labels = result.labels;
@@ -314,8 +343,15 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         },
       },
     ]);
-    if (messages.length === 0)
-      return next(new AppError("Not enough data", 400));
+    if (messages.length === 0) {
+      res.status(200).json({
+        status: "success",
+        data: {
+          isEnough: false,
+        },
+      });
+      return;
+    }
 
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
@@ -375,8 +411,15 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         },
       },
     ]);
-    if (messages.length === 0)
-      return next(new AppError("Not enough data", 400));
+    if (messages.length === 0) {
+      res.status(200).json({
+        status: "success",
+        data: {
+          isEnough: false,
+        },
+      });
+      return;
+    }
 
     const result = findAverage(messages, dataPoints, req.query.type);
     data = result.data;
@@ -418,12 +461,19 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       if (change < 0) sign = "negative";
     }
   } else {
-    return next(new AppError("Not enough data", 400));
+    res.status(200).json({
+      status: "success",
+      data: {
+        isEnough: false,
+      },
+    });
+    return;
   }
 
   res.status(200).json({
     status: "success",
     data: {
+      isEnough: true,
       y: data,
       x: labels,
       change,
