@@ -69,7 +69,6 @@ const findAverage = (datas, dataPoints, dataType) => {
 
     labels.push(new Date(group[0].timestamp));
   }
-  // console.log(data);
 
   return { data, labels };
 };
@@ -107,6 +106,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       },
     },
   ]);
+  if (messages.length === 0) return next(new AppError("Not enough data", 400));
 
   let data = [];
   let labels = [];
@@ -127,10 +127,12 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
           ),
           timestamp: {
             $gte: new Date(new Date() - 30 * 24 * 60 * 60 * 1000),
+            $lte: new Date(new Date()),
           },
         },
       },
     ]);
+
     if (messages.length === 0)
       return next(new AppError("Not enough data", 400));
 
@@ -187,6 +189,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
           ),
           timestamp: {
             $gte: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
+            $lte: new Date(new Date()),
           },
         },
       },
@@ -246,6 +249,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
           ),
           timestamp: {
             $gte: new Date(new Date() - 24 * 60 * 60 * 1000),
+            $lte: new Date(new Date()),
           },
         },
       },
@@ -305,6 +309,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
           ),
           timestamp: {
             $gte: new Date(new Date() - 60 * 60 * 1000),
+            $lte: new Date(new Date()),
           },
         },
       },
@@ -365,6 +370,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
           ),
           timestamp: {
             $gte: new Date(new Date() - 60 * 1000),
+            $lte: new Date(new Date()),
           },
         },
       },

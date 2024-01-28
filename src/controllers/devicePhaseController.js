@@ -281,6 +281,9 @@ exports.removeDevice = catchAsync(async (req, res, next) => {
 
   await Device.findByIdAndUpdate(updatedDevice._id, { status: "available" });
   await DevicePhase.findByIdAndDelete(req.params.devicePhaseId);
+  await Message.deleteMany({
+    "metadata.devicePhaseId": req.params.devicePhaseId,
+  });
 
   res.status(204).json();
 });
