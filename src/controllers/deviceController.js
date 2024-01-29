@@ -119,7 +119,9 @@ exports.getDevices = catchAsync(async (req, res, next) => {
       device[`phaseId`] = testPhase._id;
       device[`projectId`] = testProject._id;
       device[`canAccess`] = collaborators.length > 0 ? true : false;
-      formatString += ` by ${testProject.name}`;
+      if (device[`canAccess`]) {
+        formatString += ` by ${testProject.name}`;
+      }
     } else {
       formatString = device.status;
     }
