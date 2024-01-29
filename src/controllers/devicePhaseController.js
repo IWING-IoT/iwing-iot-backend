@@ -14,6 +14,7 @@ const AttributeValue = require("../models/attributeValueModel");
 const User = require("../models/userModel");
 const Message = require("../models/messageModel");
 const Gateway = require("../models/gatewayModel");
+const Mark = require("../models/markModel");
 
 const { sign } = require("crypto");
 const jwt = require("jsonwebtoken");
@@ -133,7 +134,7 @@ exports.getDevice = catchAsync(async (req, res, next) => {
   );
 
   const match = {};
-  if (req.query.type && !req.query.type !== "all") {
+  if (req.query.type && req.query.type !== "all") {
     match[`deviceType.name`] = req.query.type;
   }
 
@@ -284,6 +285,7 @@ exports.removeDevice = catchAsync(async (req, res, next) => {
   await Message.deleteMany({
     "metadata.devicePhaseId": req.params.devicePhaseId,
   });
+  await Mark.deleteMany({ devicePhaseId: req.params.devicePhaseId });
 
   res.status(204).json();
 });
@@ -292,14 +294,12 @@ exports.removeDevice = catchAsync(async (req, res, next) => {
 exports.generateJwt = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.devicePhaseId))
     return next(new AppError("Invalid devicePhaseId", 400));
-  console.log(`req.params.devicePhaseId : ${req.params.devicePhaseId}`);
 
   const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
   if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
 
   const testPhase = await Phase.findById(testDevicePhase.phaseId);
   if (!testPhase) return next(new AppError("Phase not found", 404));
-  console.log(testPhase._id);
 
   await checkCollab(
     next,
@@ -382,29 +382,6 @@ exports.getDeviceInfo = catchAsync(async (req, res, next) => {
     status: "success",
     data: formatOutput,
   });
-});
-
-// GET /api/devicePhase/:devicePhaseId/stat
-exports.getDeviceStat = catchAsync(async (req, res, next) => [
-  res.status(200).json(),
-]);
-
-// GET /api/devicePhase/:devicePhaseId/graph (finished)
-exports.getDeviceGraph = catchAsync(async (req, res, next) => {
-  if (!isValidObjectId(req.params.devicePhaseId))
-    return next(new AppError("Invalid devicePhaseId", 400));
-
-  const testDevicePhase = await DevicePhase.findById(req.params.devicePhaseId);
-  if (!testDevicePhase) return next(new AppError("DevicePhase not found", 404));
-
-  if (req.query.type === "battery") {
-  } else if (req.query.type === "temperature") {
-  } else if (req.query.type === "message") {
-  } else {
-    return next(new AppError("Invalid type", 400));
-  }
-
-  res.status(200).json();
 });
 
 // PATCH /api/devicePhase/:devicePhaseId (finished)
