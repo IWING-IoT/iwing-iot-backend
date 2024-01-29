@@ -17,6 +17,7 @@ const Attribute = require("./../models/attributeModel");
 const Area = require("./../models/areaModel");
 const Mark = require("./../models/markModel");
 const Gateway = require("./../models/gatewayModel");
+const DeviceType = require("./../models/deviceTypeModel");
 
 const AppError = require("../utils/appError");
 const DevicePhase = require("../models/devicePhaseModel");
