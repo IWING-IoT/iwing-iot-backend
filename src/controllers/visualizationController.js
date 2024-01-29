@@ -729,7 +729,7 @@ exports.getLastConnectionVisualization = catchAsync(async (req, res, next) => {
       $match: {
         phaseId: new mongoose.Types.ObjectId(req.params.phaseId),
         lastConnection: {
-          $gte: new Date(new Date() - threshold * mutiplierRange),
+          $lte: new Date(new Date() - threshold * mutiplierRange),
         },
       },
     },

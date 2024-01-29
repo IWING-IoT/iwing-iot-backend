@@ -11,6 +11,7 @@ const Project = require("../models/projectModel");
 const Phase = require("../models/phaseModel");
 const Gateway = require("../models/gatewayModel");
 const Mark = require("../models/markModel");
+const Collaborator = require("../models/collaboratorModel");
 
 const jwt = require("jsonwebtoken");
 
@@ -111,6 +112,13 @@ exports.getDevices = catchAsync(async (req, res, next) => {
       const testProject = await Project.findById(testPhase.projectId);
       if (!testProject) continue;
 
+      const collaborators = await Collaborator.find({
+        projectId: testProject._id,
+        userId: req.user.id,
+      });
+      device[`phaseId`] = testPhase._id;
+      device[`projectId`] = testProject._id;
+      device[`canAccess`] = collaborators.length > 0 ? true : false;
       formatString += ` by ${testProject.name}`;
     } else {
       formatString = device.status;
