@@ -82,6 +82,9 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
   if (testDevicePhase.status !== "active")
     return next(new AppError("Device is not active", 400));
 
+  console.log(`Received message from ${req.fields.createdAt}`);
+  console.log(`IoT Platform time ${Date.now()}`);
+
   const apis = await PhaseApi.find({ phaseId: testDevicePhase.phaseId });
 
   const formatData = {};

@@ -33,12 +33,6 @@ router.get(
 );
 
 router.get(
-  "/:devicePhaseId/stat",
-  authController.protect,
-  devicePhaseController.getDeviceStat
-);
-
-router.get(
   "/:devicePhaseId/firmware",
   authController.protect,
   deviceFirmwareController.getDeviceFirmware

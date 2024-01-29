@@ -13,7 +13,7 @@ const attributeValueSchema = new mongoose.Schema({
   },
   value: {
     type: String,
-    required: [true, "Attribute value must has a value "],
+    default: "",
   },
 });
 

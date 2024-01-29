@@ -106,6 +106,8 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       },
     },
   ]);
+  console.log(messages);
+  console.log(new Date());
   if (messages.length === 0) {
     res.status(200).json({
       status: "success",
@@ -276,6 +278,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         },
       },
     ]);
+    console.log(messages);
 
     if (messages.length === 0) {
       res.status(200).json({
