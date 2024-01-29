@@ -7,8 +7,8 @@ from datetime import datetime
 import math
 import random
 
+
 def generate_random_coordinates(center_lat, center_lon, radius_km, num_points):
-    
     coordinates = []
 
     for _ in range(num_points):
@@ -17,7 +17,9 @@ def generate_random_coordinates(center_lat, center_lon, radius_km, num_points):
         theta = random.uniform(0, 2 * math.pi)
 
         # Calculate new latitude and longitude
-        delta_lat = r * math.cos(theta) / 110.574  # 1 degree of latitude is approximately 110.574 km
+        delta_lat = (
+            r * math.cos(theta) / 110.574
+        )  # 1 degree of latitude is approximately 110.574 km
         delta_lon = r * math.sin(theta) / (111.32 * math.cos(math.radians(center_lat)))
 
         new_lat = center_lat + delta_lat
@@ -27,23 +29,26 @@ def generate_random_coordinates(center_lat, center_lon, radius_km, num_points):
 
     return coordinates
 
+
 # # Example usage:
 center_latitude = 16.7899714  # Example: New York City
 center_longitude = 98.9176732
 radius_kilometers = 5
 num_points = 10000000
 
-random_coordinates = generate_random_coordinates(center_latitude, center_longitude, radius_kilometers, num_points)
+random_coordinates = generate_random_coordinates(
+    center_latitude, center_longitude, radius_kilometers, num_points
+)
 
 # print(datetime.now().isoformat())
 temperature = [35, 95]
 battery = 100
-url = f'http://localhost:5573/api/message/standalone'
-token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXZpY2VQaGFzZUlkIjoiNjVhZDNjNjBhMTEyNjI3MGU3ODExMDY5IiwiaWF0IjoxNzA1ODUyMDAwLCJleHAiOjEuOGUrMzR9.thErC89USix-x0akrX8CNOjPTkMX5La-zf-ETX3aem8'
+url = f"http://localhost:5573/api/message/standalone"
+token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXZpY2VQaGFzZUlkIjoiNjVhZDNjNjBhMTEyNjI3MGU3ODExMDZmIiwiaWF0IjoxNzA1ODUyMDAwLCJleHAiOjEuOGUrMzR9.12Bf4zad1WOcelITcgWDVWxtL5EErWfkMXMcl1CFqx0"
 
 
 for lat, long in random_coordinates:
-    headers = {'Content-type': 'application/json',  'Authorization': 'Bearer ' + token}
+    headers = {"Content-type": "application/json", "Authorization": "Bearer " + token}
     data = {
         "createdAt": datetime.now().isoformat(),
         "latitude": lat,
@@ -53,23 +58,21 @@ for lat, long in random_coordinates:
     }
     print(data)
 
-    requests.post(url, json=data,headers=headers)
+    requests.post(url, json=data, headers=headers)
 
-    battery = data['battery']
-
+    battery = data["battery"]
 
     if battery < 0:
         battery = 100
 
-    time.sleep(np.random.uniform(10, 60))
+    time.sleep(np.random.uniform(10, 20))
 
 # position = [15.8465664,100.5784414]
 # maxMovement = [0.004, 0.002]
 # temperature = [35, 95]
-# # Seconds   
+# # Seconds
 # sendInterval = [120, 600]
 # battery = 100
-
 
 
 # Get Token

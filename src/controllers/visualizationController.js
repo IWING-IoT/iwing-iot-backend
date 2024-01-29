@@ -8,6 +8,7 @@ const Message = require("../models/messageModel");
 const Phase = require("../models/phaseModel");
 const DeviceType = require("../models/deviceTypeModel");
 const checkCollab = require("../utils/checkCollab");
+const { points } = require("@turf/turf");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -74,11 +75,10 @@ const findAverage = (datas, dataPoints, dataType) => {
 };
 
 // GET /api/devicePhase/:devicePhaseId/graph?type&range&points
-// Get data from message and send into graph x, y axis
+
 exports.getDeviceGraph = catchAsync(async (req, res, next) => {
   // Check if devicePhaseId is valid
   const dataPoints = req.query.point * 1 || 5;
-
   if (!isValidObjectId(req.params.devicePhaseId))
     return next(new AppError("Invalid devicePhaseId", 400));
 
@@ -88,412 +88,421 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
   if (req.query.type !== "temperature" && req.query.type !== "battery") {
     return next(new AppError("Invalid type", 400));
   }
-  let current = {};
+  const points = req.query.point * 1 || 5;
 
-  if (devicePhase[`${req.query.type}`]) {
-    current = { current: devicePhase[`${req.query.type}`] };
-  }
-  // Check is message is cover range of time
-
-  const messages = await Message.aggregate([
-    {
-      $match: {
-        "metadata.devicePhaseId": new mongoose.Types.ObjectId(
-          req.params.devicePhaseId
-        ),
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        min: { $min: "$timestamp" },
-        max: { $max: "$timestamp" },
-      },
-    },
-  ]);
-  console.log(messages);
-  console.log(new Date());
-  if (messages.length === 0) {
-    res.status(200).json({
-      status: "success",
-      data: {
-        isEnough: false,
-        ...current,
-      },
-    });
-    return;
-  }
-
+  const current = { current: devicePhase[`${req.query.type}`] };
   let data = [];
-  let labels = [];
-  let change = 0;
+  let label = [];
   let sign = "positive";
-  if (
-    req.query.range === "month" &&
-    new Date(messages[0].max) - new Date(messages[0].min) >
-      30 * 24 * 60 * 60 * 1000
-  ) {
-    // Get message from last 30 days and find average of temperature by dividing range by dataPoints
+  let change = 0;
 
-    const messages = await Message.aggregate([
+  if (req.query.range === "minute") {
+    let timeRange = 60 * 1000;
+    const message = await Message.aggregate([
       {
         $match: {
           "metadata.devicePhaseId": new mongoose.Types.ObjectId(
             req.params.devicePhaseId
           ),
           timestamp: {
-            $gte: new Date(new Date() - 30 * 24 * 60 * 60 * 1000),
+            $gte: new Date(new Date() - timeRange),
             $lte: new Date(new Date()),
           },
         },
       },
     ]);
 
-    if (messages.length === 0) {
+    if (message.length === 0) {
       res.status(200).json({
         status: "success",
         data: {
           isEnough: false,
-          ...current,
+          current: devicePhase[`${req.query.type}`] || 0,
         },
       });
       return;
     }
 
-    const result = findAverage(messages, dataPoints, req.query.type);
-    data = result.data;
-    labels = result.labels;
+    let overallAvg = 0;
+    let countValid = 0;
 
-    // Compare avg between this month and last month
+    for (let i = points; i > 0; i--) {
+      const max = new Date(new Date() - ((i - 1) * timeRange) / points);
+      const min = new Date(new Date() - (i * timeRange) / points);
 
-    const messagesLast = await Message.aggregate([
-      {
-        $match: {
-          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
-            req.params.devicePhaseId
-          ),
-          timestamp: {
-            $gte: new Date(new Date() - 60 * 24 * 60 * 60 * 1000),
-            $lte: new Date(new Date() - 30 * 24 * 60 * 60 * 1000),
+      const filteredMessage = message.filter(
+        (msg) => msg.createdAt >= min && msg.createdAt < max
+      );
+
+      label.push(new Date((max.getTime() + min.getTime()) / 2));
+      if (filteredMessage.length === 0) {
+        data.push(null);
+      } else {
+        countValid++;
+        const avg = filteredMessage.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / filteredMessage.length;
+        }, 0);
+        overallAvg += avg;
+        data.push(avg);
+      }
+
+      const currentAvg = overallAvg / countValid;
+
+      const messageChange = await Message.aggregate([
+        {
+          $match: {
+            "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+              req.params.devicePhaseId
+            ),
+            timestamp: {
+              $lte: new Date(new Date() - timeRange),
+              $gte: new Date(new Date() - timeRange * 2),
+            },
           },
         },
-      },
-    ]);
-    if (messagesLast.length === 0) {
-      sign = "positive";
-      change = 100;
-    } else {
-      const lastMonthAvg =
-        messagesLast.reduce((acc, cur) => {
-          return acc + cur[`${req.query.type}`];
-        }, 0) / messagesLast.length;
+      ]);
 
-      change =
-        ((data.reduce((acc, cur) => {
-          return acc + cur;
-        }, 0) /
-          data.length -
-          lastMonthAvg) /
-          lastMonthAvg) *
-        100;
-      if (change < 0) sign = "negative";
+      if (messageChange.length === 0) {
+        change = 100;
+        sign = "positive";
+      } else {
+        const previousAvg = messageChange.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / messageChange.length;
+        }, 0);
+
+        change = ((currentAvg - previousAvg) / previousAvg) * 100;
+        if (change < 0) {
+          sign = "negative";
+        }
+      }
     }
-  } else if (
-    req.query.range === "week" &&
-    new Date(messages[0].max) - new Date(messages[0].min) >
-      7 * 24 * 60 * 60 * 1000
-  ) {
-    // Get message from last 7 days
-
-    const messages = await Message.aggregate([
+  } else if (req.query.range === "hour") {
+    let timeRange = 60 * 60 * 1000;
+    const message = await Message.aggregate([
       {
         $match: {
           "metadata.devicePhaseId": new mongoose.Types.ObjectId(
             req.params.devicePhaseId
           ),
           timestamp: {
-            $gte: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
+            $gte: new Date(new Date() - timeRange),
             $lte: new Date(new Date()),
           },
         },
       },
     ]);
-    if (messages.length === 0) {
+
+    if (message.length === 0) {
       res.status(200).json({
         status: "success",
         data: {
           isEnough: false,
-          ...current,
+          current: devicePhase[`${req.query.type}`] || 0,
         },
       });
       return;
     }
-    const result = findAverage(messages, dataPoints, req.query.type);
-    data = result.data;
-    labels = result.labels;
+    let overallAvg = 0;
+    let countValid = 0;
 
-    // Compare avg between this week and last week
+    for (let i = points; i > 0; i--) {
+      const max = new Date(new Date() - ((i - 1) * timeRange) / points);
+      const min = new Date(new Date() - (i * timeRange) / points);
+      const filteredMessage = message.filter(
+        (msg) => msg.createdAt >= min && msg.createdAt < max
+      );
 
-    const messagesLast = await Message.aggregate([
-      {
-        $match: {
-          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
-            req.params.devicePhaseId
-          ),
-          timestamp: {
-            $gte: new Date(new Date() - 14 * 24 * 60 * 60 * 1000),
-            $lte: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
+      label.push(new Date((max.getTime() + min.getTime()) / 2));
+      if (filteredMessage.length === 0) {
+        data.push(null);
+      } else {
+        countValid++;
+        const avg = filteredMessage.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / filteredMessage.length;
+        }, 0);
+        overallAvg += avg;
+        data.push(avg);
+      }
+
+      const currentAvg = overallAvg / countValid;
+
+      const messageChange = await Message.aggregate([
+        {
+          $match: {
+            "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+              req.params.devicePhaseId
+            ),
+            timestamp: {
+              $lte: new Date(new Date() - timeRange),
+              $gte: new Date(new Date() - timeRange * 2),
+            },
           },
         },
-      },
-    ]);
+      ]);
 
-    if (messagesLast.length === 0) {
-      sign = "positive";
-      change = 100;
-    } else {
-      const lastMonthAvg =
-        messagesLast.reduce((acc, cur) => {
-          return acc + cur[`${req.query.type}`];
-        }, 0) / messagesLast.length;
+      if (messageChange.length === 0) {
+        change = 100;
+        sign = "positive";
+      } else {
+        const previousAvg = messageChange.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / messageChange.length;
+        }, 0);
 
-      change =
-        ((data.reduce((acc, cur) => {
-          return acc + cur;
-        }, 0) /
-          data.length -
-          lastMonthAvg) /
-          lastMonthAvg) *
-        100;
-      if (change < 0) sign = "negative";
+        change = ((currentAvg - previousAvg) / previousAvg) * 100;
+        if (change < 0) {
+          sign = "negative";
+        }
+      }
     }
-  } else if (
-    req.query.range === "day" &&
-    new Date(messages[0].max) - new Date(messages[0].min) > 24 * 60 * 60 * 1000
-  ) {
-    // Get message from last 24 hours
-
-    const messages = await Message.aggregate([
+  } else if (req.query.range === "day") {
+    let timeRange = 24 * 60 * 60 * 1000;
+    const message = await Message.aggregate([
       {
         $match: {
           "metadata.devicePhaseId": new mongoose.Types.ObjectId(
             req.params.devicePhaseId
           ),
           timestamp: {
-            $gte: new Date(new Date() - 24 * 60 * 60 * 1000),
+            $gte: new Date(new Date() - timeRange),
             $lte: new Date(new Date()),
           },
         },
       },
     ]);
-    console.log(messages);
 
-    if (messages.length === 0) {
+    if (message.length === 0) {
       res.status(200).json({
         status: "success",
         data: {
           isEnough: false,
-          ...current,
+          current: devicePhase[`${req.query.type}`] || 0,
         },
       });
       return;
     }
-    const result = findAverage(messages, dataPoints, req.query.type);
-    data = result.data;
-    labels = result.labels;
 
-    // Compare avg between this day and last day
+    let overallAvg = 0;
+    let countValid = 0;
 
-    const messagesLast = await Message.aggregate([
-      {
-        $match: {
-          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
-            req.params.devicePhaseId
-          ),
-          timestamp: {
-            $gte: new Date(new Date() - 48 * 60 * 60 * 1000),
-            $lte: new Date(new Date() - 24 * 60 * 60 * 1000),
+    for (let i = points; i > 0; i--) {
+      const max = new Date(new Date() - ((i - 1) * timeRange) / points);
+      const min = new Date(new Date() - (i * timeRange) / points);
+      const filteredMessage = message.filter(
+        (msg) => msg.createdAt >= min && msg.createdAt < max
+      );
+
+      label.push(new Date((max.getTime() + min.getTime()) / 2));
+      if (filteredMessage.length === 0) {
+        data.push(null);
+      } else {
+        countValid++;
+        const avg = filteredMessage.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / filteredMessage.length;
+        }, 0);
+        overallAvg += avg;
+        data.push(avg);
+      }
+
+      const currentAvg = overallAvg / countValid;
+
+      const messageChange = await Message.aggregate([
+        {
+          $match: {
+            "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+              req.params.devicePhaseId
+            ),
+            timestamp: {
+              $lte: new Date(new Date() - timeRange),
+              $gte: new Date(new Date() - timeRange * 2),
+            },
           },
         },
-      },
-    ]);
-    if (messagesLast.length === 0) {
-      sign = "positive";
-      change = 100;
-    } else {
-      const lastMonthAvg =
-        messagesLast.reduce((acc, cur) => {
-          return acc + cur[`${req.query.type}`];
-        }, 0) / messagesLast.length;
+      ]);
 
-      change =
-        ((data.reduce((acc, cur) => {
-          return acc + cur;
-        }, 0) /
-          data.length -
-          lastMonthAvg) /
-          lastMonthAvg) *
-        100;
-      if (change < 0) sign = "negative";
+      if (messageChange.length === 0) {
+        change = 100;
+        sign = "positive";
+      } else {
+        const previousAvg = messageChange.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / messageChange.length;
+        }, 0);
+
+        change = ((currentAvg - previousAvg) / previousAvg) * 100;
+        if (change < 0) {
+          sign = "negative";
+        }
+      }
     }
-  } else if (
-    req.query.range === "hour" &&
-    new Date(messages[0].max) - new Date(messages[0].min) > 60 * 60 * 1000
-  ) {
-    // Get message from last 60 minutes
-
-    const messages = await Message.aggregate([
+  } else if (req.query.range === "week") {
+    let timeRange = 7 * 24 * 60 * 60 * 1000;
+    const message = await Message.aggregate([
       {
         $match: {
           "metadata.devicePhaseId": new mongoose.Types.ObjectId(
             req.params.devicePhaseId
           ),
           timestamp: {
-            $gte: new Date(new Date() - 60 * 60 * 1000),
+            $gte: new Date(new Date() - timeRange),
             $lte: new Date(new Date()),
           },
         },
       },
     ]);
-    if (messages.length === 0) {
+
+    if (message.length === 0) {
       res.status(200).json({
         status: "success",
         data: {
           isEnough: false,
-          ...current,
+          current: devicePhase[`${req.query.type}`] || 0,
         },
       });
       return;
     }
 
-    const result = findAverage(messages, dataPoints, req.query.type);
-    data = result.data;
-    labels = result.labels;
+    let overallAvg = 0;
+    let countValid = 0;
 
-    // Compare avg between this hour and last hour
+    for (let i = points; i > 0; i--) {
+      const max = new Date(new Date() - ((i - 1) * timeRange) / points);
+      const min = new Date(new Date() - (i * timeRange) / points);
+      const filteredMessage = message.filter(
+        (msg) => msg.createdAt >= min && msg.createdAt < max
+      );
 
-    const messagesLast = await Message.aggregate([
-      {
-        $match: {
-          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
-            req.params.devicePhaseId
-          ),
+      label.push(new Date((max.getTime() + min.getTime()) / 2));
+      if (filteredMessage.length === 0) {
+        data.push(null);
+      } else {
+        countValid++;
+        const avg = filteredMessage.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / filteredMessage.length;
+        }, 0);
+        overallAvg += avg;
+        data.push(avg);
+      }
 
-          timestamp: {
-            $gte: new Date(new Date() - 120 * 60 * 1000),
-            $lte: new Date(new Date() - 60 * 60 * 1000),
+      const currentAvg = overallAvg / countValid;
+
+      const messageChange = await Message.aggregate([
+        {
+          $match: {
+            "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+              req.params.devicePhaseId
+            ),
+            timestamp: {
+              $lte: new Date(new Date() - timeRange),
+              $gte: new Date(new Date() - timeRange * 2),
+            },
           },
         },
-      },
-    ]);
-    if (messagesLast.length === 0) {
-      sign = "positive";
-      change = 100;
-    } else {
-      const lastMonthAvg =
-        messagesLast.reduce((acc, cur) => {
-          return acc + cur[`${req.query.type}`];
-        }, 0) / messagesLast.length;
+      ]);
 
-      change =
-        ((data.reduce((acc, cur) => {
-          return acc + cur;
-        }, 0) /
-          data.length -
-          lastMonthAvg) /
-          lastMonthAvg) *
-        100;
-      if (change < 0) sign = "negative";
+      if (messageChange.length === 0) {
+        change = 100;
+        sign = "positive";
+      } else {
+        const previousAvg = messageChange.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / messageChange.length;
+        }, 0);
+
+        change = ((currentAvg - previousAvg) / previousAvg) * 100;
+        if (change < 0) {
+          sign = "negative";
+        }
+      }
     }
-  } else if (
-    req.query.range === "minute" &&
-    new Date(messages[0].max) - new Date(messages[0].min) > 60 * 1000
-  ) {
-    // Get message from last 60 seconds
-
-    const messages = await Message.aggregate([
+  } else if (req.query.range === "month") {
+    let timeRange = 4 * 7 * 24 * 60 * 60 * 1000;
+    const message = await Message.aggregate([
       {
         $match: {
           "metadata.devicePhaseId": new mongoose.Types.ObjectId(
             req.params.devicePhaseId
           ),
           timestamp: {
-            $gte: new Date(new Date() - 60 * 1000),
+            $gte: new Date(new Date() - timeRange),
             $lte: new Date(new Date()),
           },
         },
       },
     ]);
-    if (messages.length === 0) {
+
+    if (message.length === 0) {
       res.status(200).json({
         status: "success",
         data: {
           isEnough: false,
-          ...current,
+          current: devicePhase[`${req.query.type}`] || 0,
         },
       });
       return;
     }
+    let overallAvg = 0;
+    let countValid = 0;
 
-    const result = findAverage(messages, dataPoints, req.query.type);
-    data = result.data;
-    labels = result.labels;
+    for (let i = points; i > 0; i--) {
+      const max = new Date(new Date() - ((i - 1) * timeRange) / points);
+      const min = new Date(new Date() - (i * timeRange) / points);
+      const filteredMessage = message.filter(
+        (msg) => msg.createdAt >= min && msg.createdAt < max
+      );
 
-    // Compare avg between this minute and last minute
+      label.push(new Date((max.getTime() + min.getTime()) / 2));
+      if (filteredMessage.length === 0) {
+        data.push(null);
+      } else {
+        countValid++;
+        const avg = filteredMessage.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / filteredMessage.length;
+        }, 0);
+        overallAvg += avg;
+        data.push(avg);
+      }
 
-    const messagesLast = await Message.aggregate([
-      {
-        $match: {
-          "metadata.devicePhaseId": new mongoose.Types.ObjectId(
-            req.params.devicePhaseId
-          ),
+      const currentAvg = overallAvg / countValid;
 
-          timestamp: {
-            $gte: new Date(new Date() - 120 * 1000),
-            $lte: new Date(new Date() - 60 * 1000),
+      const messageChange = await Message.aggregate([
+        {
+          $match: {
+            "metadata.devicePhaseId": new mongoose.Types.ObjectId(
+              req.params.devicePhaseId
+            ),
+            timestamp: {
+              $lte: new Date(new Date() - timeRange),
+              $gte: new Date(new Date() - timeRange * 2),
+            },
           },
         },
-      },
-    ]);
-    if (messagesLast.length === 0) {
-      sign = "positive";
-      change = 100;
-    } else {
-      const lastMonthAvg =
-        messagesLast.reduce((acc, cur) => {
-          return acc + cur[`${req.query.type}`];
-        }, 0) / messagesLast.length;
+      ]);
 
-      change =
-        ((data.reduce((acc, cur) => {
-          return acc + cur;
-        }, 0) /
-          data.length -
-          lastMonthAvg) /
-          lastMonthAvg) *
-        100;
-      if (change < 0) sign = "negative";
+      if (messageChange.length === 0) {
+        change = 100;
+        sign = "positive";
+      } else {
+        const previousAvg = messageChange.reduce((acc, cur) => {
+          return acc + cur[`${req.query.type}`] / messageChange.length;
+        }, 0);
+
+        change = ((currentAvg - previousAvg) / previousAvg) * 100;
+        if (change < 0) {
+          sign = "negative";
+        }
+      }
     }
   } else {
-    res.status(200).json({
-      status: "success",
-      data: {
-        isEnough: false,
-        ...current,
-      },
-    });
-    return;
+    return next(new AppError("Invalid range", 400));
   }
 
   res.status(200).json({
     status: "success",
     data: {
       isEnough: true,
-      y: data,
-      x: labels,
-      change,
-      sign,
+      y: data.reverse(),
+      x: label.reverse(),
       ...current,
+      sign,
+      change,
     },
   });
 });
@@ -603,8 +612,6 @@ exports.getDeviceVisualization = catchAsync(async (req, res, next) => {
       }
     }
   }
-
-  // console.log(activeGateway);
 
   res.status(200).json({
     status: "success",
