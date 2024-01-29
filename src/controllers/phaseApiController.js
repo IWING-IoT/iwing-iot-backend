@@ -23,7 +23,7 @@ const compareId = (id1, id2) => {
   return id1.toString() === id2.toString();
 };
 
-// POST /api/phase/:phaseId/phaseApi (testing)
+// POST /api/phase/:phaseId/phaseApi (finished)
 exports.createApi = catchAsync(async (req, res, next) => {
   const phaseId = req.params.phaseId;
   if (!req.fields.dataType || !req.fields.name || !isValidObjectId(phaseId))
@@ -61,7 +61,7 @@ exports.createApi = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
-// GET /api/phase/:phaseId/phaseApi (testing)
+// GET /api/phase/:phaseId/phaseApi (finished)
 exports.getApi = catchAsync(async (req, res, next) => {
   const phaseId = req.params.phaseId;
 
@@ -116,7 +116,7 @@ exports.getApi = catchAsync(async (req, res, next) => {
   });
 });
 
-// PATCH /api/phaseApi/:phaseApiId (testing)
+// PATCH /api/phaseApi/:phaseApiId (finished)
 exports.edited = catchAsync(async (req, res, next) => {
   const phaseApiId = req.params.phaseApiId;
 
@@ -134,12 +134,9 @@ exports.edited = catchAsync(async (req, res, next) => {
   const testPhase = await Phase.findById(testPhaseApi.phaseId);
   if (!testPhase) return next(new AppError("Phase not exist", 404));
 
-  const testProject = await Project.findById(testPhase.projectId);
-  if (!testProject) return next(new AppError("Project not exist", 404));
-
   await checkCollab(
     next,
-    testProject._id,
+    testPhase.projectId,
     req.user._id,
     "You do not have permission to edit a new api.",
     "can_edit",
@@ -170,7 +167,7 @@ exports.edited = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// DELETE /api/phaseApi/:phaseApi (testing)
+// DELETE /api/phaseApi/:phaseApi (finshed)
 exports.deleted = catchAsync(async (req, res, next) => {
   const phaseApiId = req.params.phaseApiId;
 
@@ -204,13 +201,23 @@ exports.deleted = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// GET /api/phase/:phaseId/phaseApi/example (testing)
+// GET /api/phase/:phaseId/phaseApi/example (finished)
 exports.example = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
     return next(new AppError("Invalid phaseId", 400));
 
   const testPhase = await Phase.findById(req.params.phaseId);
   if (!testPhase) return next(new AppError("Phase not found", 404));
+
+  await checkCollab(
+    next,
+    testPhase.projectId,
+    req.user._id,
+    "You do not have permission to view a new api.",
+    "can_edit",
+    "can_view",
+    "owner"
+  );
 
   const formatOutput = {
     gateway: { nodeAlias: "alias name of node" },
@@ -243,6 +250,15 @@ exports.copy = catchAsync(async (req, res, next) => {
 
   const testPhase = await Phase.findById(req.params.phaseId);
   if (!testPhase) return next(new AppError("Phase not found", 404));
+
+  await checkCollab(
+    next,
+    testPhase.projectId,
+    req.user._id,
+    "You do not have permission to edit a new api.",
+    "can_edit",
+    "owner"
+  );
   const phases = await Phase.find({
     projectId: testPhase.projectId,
     isDeleted: false,
