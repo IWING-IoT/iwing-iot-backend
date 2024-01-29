@@ -361,6 +361,7 @@ exports.createEntry = catchAsync(async (req, res, next) => {
         break;
       }
     }
+
     const attributeValue = await AttributeValue.create({
       categoryEntityId: createEntry._id,
       attributeId: dataAttribute._id,
@@ -695,7 +696,6 @@ exports.deleteEntry = catchAsync(async (req, res, next) => {
 });
 
 exports.getAllEntry = catchAsync(async (req, res, next) => {
-  console.log(req.params.projectId);
   if (!isValidObjectId(req.params.projectId))
     return next(new AppError("Invalid projectId", 400));
 
@@ -745,7 +745,6 @@ exports.getAllEntry = catchAsync(async (req, res, next) => {
     category.entry = attributeValues;
   }
 
-  console.log(categories);
   res.status(200).json({
     status: "success",
     data: categories,
