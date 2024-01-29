@@ -39,7 +39,7 @@ random_coordinates = generate_random_coordinates(center_latitude, center_longitu
 temperature = [35, 95]
 battery = 100
 url = f'http://localhost:5573/api/message/standalone'
-token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXZpY2VQaGFzZUlkIjoiNjViNTZhMWJlZmVkYWQ4M2VmMTU3NGY4IiwiaWF0IjoxNzA2Mzg3OTk1LCJleHAiOjEuOGUrMzR9.7bPOFanSS4lt3kw5ymfha3KrCtUW6mWQGOxOQd8ydhQ'
+token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXZpY2VQaGFzZUlkIjoiNjVhZDNjNjBhMTEyNjI3MGU3ODExMDY5IiwiaWF0IjoxNzA1ODUyMDAwLCJleHAiOjEuOGUrMzR9.thErC89USix-x0akrX8CNOjPTkMX5La-zf-ETX3aem8'
 
 
 for lat, long in random_coordinates:
