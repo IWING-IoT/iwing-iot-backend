@@ -13,6 +13,11 @@ const PhaseApi = require("../models/phaseApiModel");
 const Message = require("../models/messageModel");
 const DevicePhase = require("../models/devicePhaseModel");
 const Device = require("../models/deviceModel");
+const Mark = require("../models/markModel");
+const Area = require("../models/areaModel");
+const Gateway = require("../models/gatewayModel");
+const DeviceFirmware = require("../models/deviceFirmwareModel");
+const DeviceType = require("../models/deviceTypeModel");
 
 const Upload = require("./../utils/upload");
 const fs = require("fs");
@@ -41,16 +46,6 @@ exports.createPhase = catchAsync(async (req, res, next) => {
   if (!req.fields.name) return next(new AppError("Phase required name.", 400));
 
   // Check permission wheather use has permission to create new phase
-  const projectCollab = await Collaborator.findOne({
-    projectId: req.params.projectId,
-    userId: req.user._id,
-  });
-
-  if (!projectCollab)
-    return next(
-      new AppError("You do not have permission to access this project.", 403)
-    );
-
   await checkCollab(
     next,
     req.params.projectId,
@@ -76,12 +71,14 @@ exports.createPhase = catchAsync(async (req, res, next) => {
     phaseId: newPhase._id,
     name: "latitude",
     dataType: "Number",
+    description: "latitude of device",
   });
 
   const longitudeApi = await PhaseApi.create({
     phaseId: newPhase._id,
     name: "longitude",
     dataType: "Number",
+    description: "longitude of device",
   });
 
   const temperatureApi = await PhaseApi.create({
@@ -117,16 +114,6 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
   if (!project) return next(new AppError("Project not found", 404));
 
   // Check permission wheather use has permission to delete phase
-  const projectCollab = await Collaborator.findOne({
-    projectId: project._id,
-    userId: req.user._id,
-  });
-
-  if (!projectCollab)
-    return next(
-      new AppError("You do not have permission to access this project.", 403)
-    );
-
   await checkCollab(
     next,
     project._id,
@@ -193,16 +180,6 @@ exports.deleted = catchAsync(async (req, res, next) => {
   if (!project) return next(new AppError("Project not found", 404));
 
   // Check permission wheather use has permission to delete phase
-  const projectCollab = await Collaborator.findOne({
-    projectId: project._id,
-    userId: req.user._id,
-  });
-
-  if (!projectCollab)
-    return next(
-      new AppError("You do not have permission to access this project.", 403)
-    );
-
   await checkCollab(
     next,
     project._id,
@@ -214,12 +191,35 @@ exports.deleted = catchAsync(async (req, res, next) => {
 
   // Delete message and devicePhase
 
-  // Change device phase to archived
-  const devicePhases = await DevicePhase.deleteMany({
-    phaseId: req.params.phaseId,
+  const devicePhases = await DevicePhase.find({
+    phaseId: phase._id,
+  }).populate("deviceId");
+
+  for (const devicePhase of devicePhases) {
+    const type = await DeviceType.findById(devicePhase.deviceId.type);
+    if (type.name === "gateway") {
+      await Gateway.deleteMany({ gatewayId: devicePhase.deviceId._id });
+    }
+    await DevicePhase.deleteMany({ _id: devicePhase.deviceId });
+
+    // Delete devicephase message
+    await Message.deleteMany({ "metadata.devicePhaseId": devicePhase._id });
+
+    // Delete deviceFirmware
+    await DeviceFirmware.deleteMany({ devicePhaseId: devicePhase._id });
+
+    await Device.findByIdAndUpdate(devicePhase.deviceId, {
+      status: "available",
+    });
+  }
+  await Mark.deleteMany({ phaseId: phase._id });
+  await Area.deleteMany({ phaseId: phase._id });
+  await PhaseApi.deleteMany({ phaseId: phase._id });
+  await Phase.findByIdAndUpdate(phase._id, {
+    isActive: false,
+    isDeleted: true,
+    deletedAt: Date.now(),
   });
-
-
 
   await Phase.findByIdAndUpdate(req.params.phaseId, {
     isDeleted: true,
@@ -355,21 +355,7 @@ exports.editPhase = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// GET /api/phase/:phaseId/csv (testing)
-/*
-// request fields
-{
-  "createdAt": "true or false",
-  "recivedAt": "true or false",
-  "deviceName": "true or false",
-  "aliasName": "true or false",
-  "gateway": "true or false",
-  "other": [
-      "id_of_phaseApi",
-      "id_of_phaseApi"
-  ]
-}
-*/
+// GET /api/phase/:phaseId/csv (finished)
 exports.downloadCsv = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.phaseId))
     return next(new AppError("Invalid phaseId", 400));
