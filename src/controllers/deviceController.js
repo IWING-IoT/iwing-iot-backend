@@ -6,10 +6,13 @@ const Device = require("../models/deviceModel");
 const AppError = require("../utils/appError");
 const DeviceType = require("../models/deviceTypeModel");
 const DevicePhase = require("../models/devicePhaseModel");
-
-const jwt = require("jsonwebtoken");
+const Message = require("../models/messageModel");
 const Project = require("../models/projectModel");
 const Phase = require("../models/phaseModel");
+const Gateway = require("../models/gatewayModel");
+const Mark = require("../models/markModel");
+
+const jwt = require("jsonwebtoken");
 
 /**
  * @desc check wheather input id is valid mongodb objectID
@@ -39,7 +42,7 @@ const paginate = (array, page_size, page_number) => {
   return array.slice((page_number - 1) * page_size, page_number * page_size);
 };
 
-// POST /api/device (testing)
+// POST /api/device (finished)
 exports.createDevice = catchAsync(async (req, res, next) => {
   if (!req.fields.name || !req.fields.type)
     return next(new AppError("Invalid input"));
@@ -55,7 +58,7 @@ exports.createDevice = catchAsync(async (req, res, next) => {
   res.status(201).json();
 });
 
-// GET /api/device (testing)
+// GET /api/device (finished)
 exports.getDevices = catchAsync(async (req, res, next) => {
   // Query project that matching requirement
   if (!req.query.type || !req.query.status)
@@ -121,7 +124,7 @@ exports.getDevices = catchAsync(async (req, res, next) => {
   });
 });
 
-// PATCH /api/device/:deviceId/disable (testing)
+// PATCH /api/device/:deviceId/disable (finished)
 exports.disableDevice = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.deviceId))
     return next(new AppError("Invalid deviceId", 400));
@@ -139,7 +142,7 @@ exports.disableDevice = catchAsync(async (req, res, next) => {
   res.status(204).json();
 });
 
-// PATCH /api/device/:deviceId (testing)
+// PATCH /api/device/:deviceId (finished)
 exports.editDevice = catchAsync(async (req, res, next) => {
   if (!isValidObjectId(req.params.deviceId))
     return next(new AppError("Invalid deviceId", 400));
@@ -163,8 +166,20 @@ exports.deleteDevice = catchAsync(async (req, res, next) => {
   const testDevice = await Device.findById(req.params.deviceId);
   if (!testDevice) return next(new AppError("Device not found", 404));
 
-  // Delete all devicePhase
-  await DevicePhase.deleteMany({ deviceId: req.params.deviceId });
+  const devicePhases = await DevicePhase.find({
+    deviceId: req.params.deviceId,
+  }).populate("deviceId");
+  for (const devicePhase of devicePhases) {
+    // Delete devicephase message
+    await Message.deleteMany({ "metadata.devicePhaseId": devicePhase._id });
+    // Delete all devicePhase
+    const type = await DeviceType.findById(devicePhase.deviceId.type);
+    if (type.name === "gateway") {
+      await Gateway.deleteMany({ gatewayId: devicePhase.deviceId._id });
+    }
+    await Mark.deleteMany({ devicePhaseId: devicePhase._id });
+    await DevicePhase.deleteMany({ deviceId: req.params.deviceId });
+  }
   await Device.findByIdAndDelete(req.params.deviceId);
 
   res.status(204).json();
