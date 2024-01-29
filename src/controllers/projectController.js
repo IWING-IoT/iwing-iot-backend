@@ -287,6 +287,7 @@ exports.archived = catchAsync(async (req, res, next) => {
         status: "available",
       });
     }
+
     await Phase.findByIdAndUpdate(phase._id, {
       isActive: false,
       editedBy: req.user._id,
@@ -294,6 +295,13 @@ exports.archived = catchAsync(async (req, res, next) => {
       endedAt: Date.now(),
     });
   }
+
+  // Update all collaborators to can_view
+  const can_view = await Permission.findOne({ name: "can_view" });
+  await Collaborator.updateMany(
+    { projectId: req.params.projectId },
+    { permissionId: can_view._id }
+  );
 
   const updatedProject = await Project.findOneAndUpdate(
     {
