@@ -663,3 +663,72 @@ exports.getBatteryVisualization = catchAsync(async (req, res, next) => {
     data: devicePhase,
   });
 });
+
+// GET /api/phase/:phaseId/visualization/lastConnection
+exports.getLastConnectionVisualization = catchAsync(async (req, res, next) => {
+  if (!isValidObjectId(req.params.phaseId))
+    return next(new AppError("Invalid phaseId", 400));
+
+  const testPhase = await Phase.findById(req.params.phaseId);
+  if (!testPhase) return next(new AppError("Invalid phaseId", 400));
+
+  checkCollab(
+    next,
+    testPhase.projectId,
+    req.user.id,
+    "You do not have permission to access this project.",
+    "can_view",
+    "can_edit",
+    "owner"
+  );
+
+  if (!req.query.range || !req.query.threshold)
+    return next(new AppError("Invalid query", 400));
+
+  const range = req.query.range;
+  const threshold = req.query.threshold;
+
+  let mutiplierRange = 1;
+
+  if (range === "second") {
+    mutiplierRange = 1000;
+  } else if (range === "minute") {
+    mutiplierRange = 60 * 1000;
+  } else if (range === "hour") {
+    mutiplierRange = 60 * 60 * 1000;
+  } else if (range === "day") {
+    mutiplierRange = 24 * 60 * 60 * 1000;
+  } else if (range === "month") {
+    mutiplierRange = 30 * 24 * 60 * 60 * 1000;
+  } else {
+    return next(new AppError("Invalid range", 400));
+  }
+
+  const devicePhase = await DevicePhase.aggregate([
+    {
+      $match: {
+        phaseId: new mongoose.Types.ObjectId(req.params.phaseId),
+        lastConnection: {
+          $lte: new Date(new Date() - threshold * mutiplierRange),
+        },
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        lastConnection: 1,
+        alias: 1,
+        _id: 0,
+      },
+    },
+    {
+      $sort: {
+        lastConnection: -1,
+      },
+    },
+  ]);
+  res.status(200).json({
+    stauts: "success",
+    data: devicePhase,
+  });
+});
