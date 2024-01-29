@@ -88,8 +88,11 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
   if (req.query.type !== "temperature" && req.query.type !== "battery") {
     return next(new AppError("Invalid type", 400));
   }
+  let current = {};
 
-  const current = devicePhase[`${req.query.type}`];
+  if (devicePhase[`${req.query.type}`]) {
+    current = { current: devicePhase[`${req.query.type}`] };
+  }
   // Check is message is cover range of time
 
   const messages = await Message.aggregate([
@@ -483,7 +486,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       x: labels,
       change,
       sign,
-      current,
+      ...current,
     },
   });
 });
