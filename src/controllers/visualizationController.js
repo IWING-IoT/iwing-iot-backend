@@ -118,6 +118,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       status: "success",
       data: {
         isEnough: false,
+        ...current,
       },
     });
     return;
@@ -153,6 +154,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         status: "success",
         data: {
           isEnough: false,
+          ...current,
         },
       });
       return;
@@ -221,6 +223,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         status: "success",
         data: {
           isEnough: false,
+          ...current,
         },
       });
       return;
@@ -290,6 +293,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         status: "success",
         data: {
           isEnough: false,
+          ...current,
         },
       });
       return;
@@ -356,6 +360,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         status: "success",
         data: {
           isEnough: false,
+          ...current,
         },
       });
       return;
@@ -424,6 +429,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
         status: "success",
         data: {
           isEnough: false,
+          ...current,
         },
       });
       return;
@@ -473,6 +479,7 @@ exports.getDeviceGraph = catchAsync(async (req, res, next) => {
       status: "success",
       data: {
         isEnough: false,
+        ...current,
       },
     });
     return;
