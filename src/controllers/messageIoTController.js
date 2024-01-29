@@ -84,6 +84,7 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
 
   console.log(`Received message from ${req.fields.createdAt}`);
   console.log(`IoT Platform time ${Date.now()}`);
+  console.log(`Created New Date ${new Date(req.fields.createdAt)}`);
 
   const apis = await PhaseApi.find({ phaseId: testDevicePhase.phaseId });
 

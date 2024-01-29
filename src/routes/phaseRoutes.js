@@ -127,4 +127,10 @@ router.get(
   visualizationController.getBatteryVisualization
 );
 
+router.get(
+  "/:phaseId/visualization/lastConnection",
+  authController.protect,
+  visualizationController.getLastConnectionVisualization
+);
+
 module.exports = router;
