@@ -37,7 +37,6 @@ exports.putObject = async (name = null) => {
 };
 
 exports.deleteObject = async (filename) => {
-  console.log(filename);
   const deleteObjectCommand = new DeleteObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: filename,
