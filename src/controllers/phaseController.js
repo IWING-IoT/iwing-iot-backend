@@ -21,6 +21,7 @@ const DeviceType = require("../models/deviceTypeModel");
 
 const Upload = require("./../utils/upload");
 const fs = require("fs");
+var csv = require('csv-express')
 
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
@@ -384,8 +385,8 @@ exports.downloadCsv = catchAsync(async (req, res, next) => {
     });
 
     headers.push({
-      id: "recivedAt",
-      title: "recivedAt",
+      id: "recievedAt",
+      title: "recievedAt",
     });
 
     headers.push({
@@ -431,10 +432,10 @@ exports.downloadCsv = catchAsync(async (req, res, next) => {
       });
     }
 
-    if (req.fields.recivedAt.isIncluded) {
+    if (req.fields.recievedAt.isIncluded) {
       headers.push({
-        id: "recivedAt",
-        title: req.fields.recivedAt.name,
+        id: "recievedAt",
+        title: req.fields.recievedAt.name,
       });
     }
     if (req.fields.deviceName.isIncluded) {
@@ -549,18 +550,29 @@ exports.downloadCsv = catchAsync(async (req, res, next) => {
     allMessages.push(...messages);
   }
 
-  const csvWriter = createCsvWriter({
-    path: "out.csv",
-    header: headers,
-  });
-  await csvWriter.writeRecords(allMessages);
-  res.setHeader("Content-Type", "text/csv");
-  res.setHeader("Content-Disposition", "attachment; filename=out.csv");
-  res.sendFile("out.csv", { root: "./" }, (err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      fs.unlinkSync("out.csv");
+
+  const formatOutput = []
+  for (const message of allMessages) {
+    const temp = {}
+    for (const header of headers) {
+      temp[header.title] = message[header.title]
     }
-  });
+    formatOutput.push(temp)
+  }
+
+  // const csvWriter = createCsvWriter({
+  //   path: "out.csv",
+  //   header: headers,
+  // });
+  // await csvWriter.writeRecords(allMessages);
+  // res.setHeader("Content-Type", "text/csv");
+  // res.setHeader("Content-Disposition", "attachment; filename=out.csv");
+  // res.sendFile("out.csv", { root: "./" }, (err) => {
+  //   if (err) {
+  //     console.log(err);
+  //   } else {
+  //     fs.unlinkSync("out.csv");
+  //   }
+  // });
+  res.csv(formatOutput, true)
 });
