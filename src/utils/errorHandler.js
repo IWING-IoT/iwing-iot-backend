@@ -1,7 +1,6 @@
 const { model } = require("mongoose");
 
 const errorDev = (err, res) => {
-  console.log(err.message);
   if (err.isOperational) {
     res.status(err.statusCode).json({
       status: err.status,

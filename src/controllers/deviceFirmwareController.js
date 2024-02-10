@@ -221,7 +221,6 @@ exports.editDeviceFirmware = catchAsync(async (req, res, next) => {
   //   deviceFirmware.autoUpdate = req.fields.autoUpdate
   //     ? req.fields.autoUpdate
   //     : deviceFirmware.autoUpdate;
-  console.log(deviceFirmware);
   await deviceFirmware.save();
 
   res.status(204).json();

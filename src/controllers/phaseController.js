@@ -21,7 +21,7 @@ const DeviceType = require("../models/deviceTypeModel");
 
 const Upload = require("./../utils/upload");
 const fs = require("fs");
-var csv = require('csv-express')
+var csv = require("csv-express");
 
 const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
@@ -162,7 +162,6 @@ exports.phaseStatus = catchAsync(async (req, res, next) => {
 
   // Change device status to active
   for (const device of testDevicePhases) {
-    console.log(device);
     await Device.updateMany({ _id: device.deviceId }, { status: "available" });
   }
 
@@ -550,14 +549,13 @@ exports.downloadCsv = catchAsync(async (req, res, next) => {
     allMessages.push(...messages);
   }
 
-
-  const formatOutput = []
+  const formatOutput = [];
   for (const message of allMessages) {
-    const temp = {}
+    const temp = {};
     for (const header of headers) {
-      temp[header.title] = message[header.title]
+      temp[header.title] = message[header.title];
     }
-    formatOutput.push(temp)
+    formatOutput.push(temp);
   }
 
   // const csvWriter = createCsvWriter({
@@ -574,5 +572,5 @@ exports.downloadCsv = catchAsync(async (req, res, next) => {
   //     fs.unlinkSync("out.csv");
   //   }
   // });
-  res.csv(formatOutput, true)
+  res.csv(formatOutput, true);
 });

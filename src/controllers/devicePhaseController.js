@@ -458,7 +458,6 @@ exports.getNodesGateway = catchAsync(async (req, res, next) => {
   );
 
   nodesList = nodesList.map((node) => node.nodeId);
-  console.log(nodesList);
 
   nodesList = nodesList.map((id) => new mongoose.Types.ObjectId(id));
 
