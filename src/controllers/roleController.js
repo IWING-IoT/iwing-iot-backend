@@ -7,7 +7,6 @@ const Role = require("./../models/roleModel");
 
 exports.addRole = catchAsync(async (req, res, next) => {
   const role = req.fields;
-  console.log(role);
   if (!role.name) return next(new AppError("Role required name"));
   const test = await Role.findOne({ name: role.name });
   if (test) return next(new AppError(`Role ${role.name} already exist`, 401));

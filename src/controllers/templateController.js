@@ -23,7 +23,6 @@ exports.createTemplate = catchAsync(async (req, res, next) => {
 
 exports.editTemplate = catchAsync(async (req, res, next) => {
   const templateId = req.params.templateId;
-  console.log(templateId);
   const newTemplate = await Template.findOneAndUpdate(
     { _id: templateId },
     req.fields
@@ -53,7 +52,6 @@ exports.getTemplate = catchAsync(async (req, res, next) => {
     },
   ]);
 
-  console.log(templates);
   res.status(200).json({
     status: "success",
     data: templates,

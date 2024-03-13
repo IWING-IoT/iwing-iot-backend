@@ -271,7 +271,6 @@ exports.createArea = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid input", 400));
   }
 
-  console.log(req.fields.coordinates);
   if (!validateCoordinates(req.fields.coordinates)) {
     return next(new AppError("Invalid coordinates", 400));
   }
@@ -400,7 +399,6 @@ exports.createMark = catchAsync(async (req, res, next) => {
   if (!testPhase) {
     return next(new AppError("Phase not found", 404));
   }
-  console.log(testPhase);
 
   checkCollab(
     next,
