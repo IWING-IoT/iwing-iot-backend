@@ -63,6 +63,9 @@ exports.getMessageDevice = catchAsync(async (req, res, next) => {
       $match: match,
     },
     {
+      $limit: 100,
+    },
+    {
       $sort: {
         timestamp: -1,
       },
