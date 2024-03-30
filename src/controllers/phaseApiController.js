@@ -220,8 +220,13 @@ exports.example = catchAsync(async (req, res, next) => {
   );
 
   const formatOutput = {
-    gateway: { nodeAlias: "alias name of node" },
-    default: {},
+    gateway: {
+      nodeAlias: "alias name of node",
+      token: "include this fill if does not use Bearer Authentication",
+    },
+    default: {
+      token: "include this fill if does not use Bearer Authentication",
+    },
   };
 
   const apis = await PhaseApi.find({ phaseId: req.params.phaseId }).sort({
