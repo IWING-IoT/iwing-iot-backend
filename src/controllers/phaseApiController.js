@@ -221,7 +221,7 @@ exports.example = catchAsync(async (req, res, next) => {
 
   const formatOutput = {
     gateway: {
-      token: "include this fill if does not use Bearer Authentication",
+      token: "include this field if does not use Bearer Authentication",
       nodeAlias: "alias name of node",
     },
     default: {
