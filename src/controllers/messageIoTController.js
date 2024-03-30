@@ -53,6 +53,8 @@ exports.createStandalone = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
+  } else if (req.fields.token) {
+    token = req.fields.token;
   }
 
   if (!token) {
@@ -164,8 +166,9 @@ exports.createGateway = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
+  } else if (req.fields.token) {
+    token = req.fields.token;
   }
-
   if (!token) {
     return next(
       new AppError("You are not logged in, please log in to gain access.", 401)
