@@ -100,7 +100,6 @@ exports.getMessageDetail = catchAsync(async (req, res, next) => {
     timestamp: 0,
   });
   if (!testMessage) return next(new AppError("Invalid messageId", 400));
-  testMessage.latitude = 0;
   res.status(200).json({
     status: "success",
     data: testMessage,
